@@ -39,7 +39,7 @@ $chat-list-width: 30%;
             transition: transform 0.3s ease !important;
 
             &.hidden {
-                transform: translateX(100%) !important;
+                transform: translateX(-100%) !important;
             }
         }
 
@@ -53,7 +53,7 @@ $chat-list-width: 30%;
             transition: transform 0.3s ease !important;
 
             &.hidden {
-                transform: translateX(100%) !important;
+                transform: translateX(-100%) !important;
             }
         }
 
@@ -67,7 +67,7 @@ $chat-list-width: 30%;
             transition: transform 0.3s ease !important;
 
             &.hidden {
-                transform: translateX(-100%) !important;
+                transform: translateX(100%) !important;
             }
         }
     }
