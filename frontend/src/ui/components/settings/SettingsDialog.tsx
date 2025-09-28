@@ -7,12 +7,16 @@ import { isElectron } from "../../../electron/electron";
 import { useAppState } from "../../state";
 import type { Switch } from "mdui/components/switch";
 import { getAuthHeaders } from "../../../auth/api";
+import useWindowSize from "../../hooks/useWindowSize";
 
 export function SettingsDialog({ isOpen, onOpenChange }: DialogProps) {
     const [activePanel, setActivePanel] = useState("notifications-settings");
     const [pushNotificationsEnabled, setPushNotificationsEnabled] = useState(false);
     const [pushSupported, setPushSupported] = useState(false);
+    const [showCategoryList, setShowCategoryList] = useState(true);
     const user = useAppState(state => state.user);
+    const { width } = useWindowSize();
+    const isMobile = width < 800;
 
     useEffect(() => {
         setPushSupported(isSupported());
@@ -23,6 +27,13 @@ export function SettingsDialog({ isOpen, onOpenChange }: DialogProps) {
 
     const handlePanelChange = (panelId: string) => {
         setActivePanel(panelId);
+        if (isMobile) {
+            setShowCategoryList(false);
+        }
+    };
+
+    const handleBackToCategories = () => {
+        setShowCategoryList(true);
     };
 
     const handlePushNotificationToggle = async (enabled: boolean) => {
@@ -66,11 +77,16 @@ export function SettingsDialog({ isOpen, onOpenChange }: DialogProps) {
             <div className="fullscreen-wrapper">
                 <div id="settings-dialog-inner">
                     <div className="header">
+                        {isMobile && !showCategoryList && (
+                            <mdui-button-icon icon="arrow_back" id="settings-back" onClick={handleBackToCategories}></mdui-button-icon>
+                        )}
                         <mdui-button-icon icon="close" id="settings-close" onClick={() => onOpenChange(false)}></mdui-button-icon>
-                        <mdui-top-app-bar-title>Настройки</mdui-top-app-bar-title>
+                        <mdui-top-app-bar-title>
+                            {isMobile && !showCategoryList ? "Настройки" : "Настройки"}
+                        </mdui-top-app-bar-title>
                     </div>
                     <div id="settings-menu">
-                        <mdui-list>
+                        <mdui-list className={isMobile && !showCategoryList ? "hidden" : ""}>
                             <mdui-list-item 
                                 icon="notifications--filled" 
                                 rounded 
@@ -135,7 +151,7 @@ export function SettingsDialog({ isOpen, onOpenChange }: DialogProps) {
                                 О приложении
                             </mdui-list-item>
                         </mdui-list>
-                        <div className="screen">
+                        <div className={`screen ${isMobile && showCategoryList ? "hidden" : ""}`}>
                             <div id="notifications-settings" className={`settings-panel ${activePanel === "notifications-settings" ? "active" : ""}`}>
                                 <h3>Уведомления</h3>
                                 {pushSupported && (

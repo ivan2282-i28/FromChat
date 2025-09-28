@@ -7,6 +7,7 @@ import type { Message } from "../../../core/types";
 import defaultAvatar from "../../../resources/images/default-avatar.png";
 import AnimatedOpacity from "../core/animations/AnimatedOpacity";
 import type { DMPanel } from "../../panels/DMPanel";
+import { useAppState } from "../../state";
 
 interface MessagePanelRendererProps {
     panel: MessagePanel | null;
@@ -14,6 +15,7 @@ interface MessagePanelRendererProps {
 }
 
 export function MessagePanelRenderer({ panel, isChatSwitching }: MessagePanelRendererProps) {
+    const { chat, navigateBack } = useAppState();
     const [panelState, setPanelState] = useState<MessagePanelState | null>(null);
     const [switchIn, setSwitchIn] = useState(false);
     const [switchOut, setSwitchOut] = useState(false);
@@ -174,6 +176,14 @@ export function MessagePanelRenderer({ panel, isChatSwitching }: MessagePanelRen
                     dragCounterRef.current = 0;
                 }}>
                 <div className="chat-header">
+                    {chat.isMobileView && (
+                        <mdui-button-icon 
+                            icon="arrow_back" 
+                            className="back-button"
+                            onClick={navigateBack}
+                            title="Назад к чатам"
+                        ></mdui-button-icon>
+                    )}
                     <img 
                         src={panelState.profilePicture || defaultAvatar} 
                         alt="Avatar" 

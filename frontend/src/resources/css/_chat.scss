@@ -57,7 +57,7 @@
 
     .chat-container {
         display: flex;
-        width: 100%;
+        flex: 1;
         flex-direction: column;
 
         .chat-main {
@@ -73,6 +73,14 @@
                 display: flex;
                 align-items: center;
                 box-shadow: black 0 0 20px;
+                position: relative;
+
+                .back-button {
+                    position: absolute;
+                    left: 16px;
+                    z-index: 10;
+                    color: $color-dark-on-surface;
+                }
 
                 .chat-header-avatar {
                     width: 45px;
@@ -80,6 +88,13 @@
                     border-radius: 20%;
                     object-fit: cover;
                     margin-right: 1rem;
+                }
+
+                // Only add margin on mobile when back button is present
+                @media (max-width: 800px) {
+                    .chat-header-avatar {
+                        margin-left: 60px; // Make room for back button on mobile
+                    }
                 }
 
                 .chat-header-info {
@@ -400,8 +415,10 @@
             }
 
             .chat-input-wrapper {
+                $horizontal-margin: 20px;
+
                 position: relative;
-                margin: 0 20px 20px 20px;
+                margin: 0 $horizontal-margin 20px $horizontal-margin;
 
                 &::before {
                     $height: 20px;
@@ -409,8 +426,8 @@
                     content: '';
                     position: absolute;
                     top: -$height;
-                    left: 0;
-                    right: 0;
+                    left: -$horizontal-margin;
+                    right: $horizontal-margin;
                     width: 100%;
                     height: $height;
                     background: linear-gradient(

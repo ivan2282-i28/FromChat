@@ -29,6 +29,8 @@ interface ChatState {
     activePanel: MessagePanel | null;
     publicChatPanel: PublicChatPanel | null;
     dmPanel: DMPanel | null;
+    isMobileView: boolean;
+    showChatList: boolean;
 }
 
 export interface UserState {
@@ -55,6 +57,9 @@ interface AppState {
     switchToPublicChat: (chatName: string) => Promise<void>;
     switchToDM: (dmData: DMPanelData) => Promise<void>;
     switchToTab: (tab: ChatTabs) => Promise<void>;
+    setIsMobileView: (isMobile: boolean) => void;
+    setShowChatList: (show: boolean) => void;
+    navigateBack: () => void;
     
     // User state
     user: UserState;
@@ -77,7 +82,9 @@ export const useAppState = create<AppState>((set, get) => ({
         isChatSwitching: false,
         activePanel: null,
         publicChatPanel: null,
-        dmPanel: null
+        dmPanel: null,
+        isMobileView: false,
+        showChatList: true
     },
     setIsChatSwitching: (value: boolean) => set((state) => ({
         chat: {
@@ -296,7 +303,9 @@ export const useAppState = create<AppState>((set, get) => ({
                 activePanel: publicChatPanel,
                 publicChatPanel: publicChatPanel,
                 currentChat: chatName,
-                activeTab: "chats"
+                activeTab: "chats",
+                // On mobile, hide chat list when switching to a chat
+                showChatList: state.chat.isMobileView ? false : state.chat.showChatList
             }
         }));
         
@@ -341,7 +350,9 @@ export const useAppState = create<AppState>((set, get) => ({
                     username: dmData.username,
                     publicKey: dmData.publicKey
                 },
-                activeTab: "dms"
+                activeTab: "dms",
+                // On mobile, hide chat list when switching to a DM
+                showChatList: state.chat.isMobileView ? false : state.chat.showChatList
             }
         }));
         
@@ -357,6 +368,29 @@ export const useAppState = create<AppState>((set, get) => ({
             await state.switchToPublicChat("Общий чат");
         } else if (tab === "dms") {
             // DM tab - no specific panel until user is selected
+            state.setActivePanel(null);
+        }
+    },
+    
+    setIsMobileView: (isMobile: boolean) => set((state) => ({
+        chat: {
+            ...state.chat,
+            isMobileView: isMobile
+        }
+    })),
+    
+    setShowChatList: (show: boolean) => set((state) => ({
+        chat: {
+            ...state.chat,
+            showChatList: show
+        }
+    })),
+    
+    navigateBack: () => {
+        const state = get();
+        if (state.chat.isMobileView && state.chat.activePanel) {
+            // On mobile, navigate back to chat list
+            state.setShowChatList(true);
             state.setActivePanel(null);
         }
     }

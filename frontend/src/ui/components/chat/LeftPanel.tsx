@@ -107,8 +107,12 @@ function ChatHeader() {
 }
 
 export function LeftPanel() {
+    const { chat } = useAppState();
+    const isMobile = chat.isMobileView;
+    const showChatList = chat.showChatList;
+
     return (
-        <div className="chat-list" id="chat-list">
+        <div className={`chat-list ${isMobile && !showChatList ? "hidden" : ""}`} id="chat-list">
             <ChatHeader />
             <ChatTabs />
             <BottomAppBar />
