@@ -15,6 +15,7 @@ export function SettingsDialog({ isOpen, onOpenChange }: DialogProps) {
     const [pushSupported, setPushSupported] = useState(false);
     const [showCategoryList, setShowCategoryList] = useState(true);
     const user = useAppState(state => state.user);
+    const { setCurrentPage } = useAppState();
     const { width } = useWindowSize();
     const isMobile = width < 800;
 
@@ -24,6 +25,13 @@ export function SettingsDialog({ isOpen, onOpenChange }: DialogProps) {
         // For web browsers, we check if there's a subscription
         setPushNotificationsEnabled(isSupported());
     }, []);
+
+    // Handle mobile screen navigation
+    useEffect(() => {
+        if (isOpen && isMobile) {
+            setCurrentPage("settings");
+        }
+    }, [isOpen, isMobile, setCurrentPage]);
 
     const handlePanelChange = (panelId: string) => {
         setActivePanel(panelId);
@@ -71,6 +79,11 @@ export function SettingsDialog({ isOpen, onOpenChange }: DialogProps) {
             console.error("Failed to toggle notifications:", error);
         }
     };
+
+    // Don't render dialog on mobile - use screen instead
+    if (isMobile) {
+        return null;
+    }
 
     return (
         <MaterialDialog close-on-overlay-click close-on-esc fullscreen open={isOpen} onOpenChange={onOpenChange} id="settings-dialog">

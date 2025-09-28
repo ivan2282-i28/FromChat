@@ -6,9 +6,14 @@ import { MaterialDialog } from "../core/Dialog";
 import { useProfile } from "../../hooks/useProfile";
 import { ImageCropper } from "./ImageCropper";
 import { MaterialTextField } from "../core/TextField";
+import { useAppState } from "../../state";
+import useWindowSize from "../../hooks/useWindowSize";
 
 export function ProfileDialog({ isOpen, onOpenChange }: DialogProps) {
     const { profileData, isLoading, isUpdating, updateProfileData, uploadProfilePictureData } = useProfile();
+    const { setCurrentPage } = useAppState();
+    const { width } = useWindowSize();
+    const isMobile = width < 800;
 
     const [username, setUsername] = useState(profileData?.nickname ?? "");
     const [description, setDescription] = useState(profileData?.description ?? "");
@@ -25,6 +30,13 @@ export function ProfileDialog({ isOpen, onOpenChange }: DialogProps) {
         }
     }, [profileData]);
 
+    // Handle mobile screen navigation
+    useEffect(() => {
+        if (isOpen && isMobile) {
+            setCurrentPage("profile");
+        }
+    }, [isOpen, isMobile, setCurrentPage]);
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         
@@ -34,7 +46,11 @@ export function ProfileDialog({ isOpen, onOpenChange }: DialogProps) {
         });
         
         if (success) {
-            onOpenChange(false);
+            if (isMobile) {
+                setCurrentPage("chat");
+            } else {
+                onOpenChange(false);
+            }
         }
     };
 
@@ -78,6 +94,11 @@ export function ProfileDialog({ isOpen, onOpenChange }: DialogProps) {
     };
 
     const profilePictureUrl = profileData?.profile_picture || defaultAvatar;
+
+    // Don't render dialog on mobile - use screen instead
+    if (isMobile) {
+        return null;
+    }
 
     return (
         <>

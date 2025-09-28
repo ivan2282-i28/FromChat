@@ -1,14 +1,34 @@
+import { useEffect } from "react";
 import type { DialogProps } from "../../../core/types";
 import type { UserProfile } from "../../../core/types";
 import { MaterialDialog } from "../core/Dialog";
 import { formatTime } from "../../../utils/utils";
 import defaultAvatar from "../../../resources/images/default-avatar.png";
+import { useAppState } from "../../state";
+import useWindowSize from "../../hooks/useWindowSize";
 
 interface UserProfileDialogProps extends DialogProps {
     userProfile: UserProfile | null;
 }
 
 export function UserProfileDialog({ isOpen, onOpenChange, userProfile }: UserProfileDialogProps) {
+    const { setCurrentPage, setMobileScreenData } = useAppState();
+    const { width } = useWindowSize();
+    const isMobile = width < 800;
+
+    // Handle mobile screen navigation
+    useEffect(() => {
+        if (isOpen && isMobile && userProfile) {
+            setMobileScreenData({ userProfile });
+            setCurrentPage("user-profile");
+        }
+    }, [isOpen, isMobile, userProfile, setCurrentPage, setMobileScreenData]);
+
+    // Don't render dialog on mobile - use screen instead
+    if (isMobile) {
+        return null;
+    }
+
     const content = userProfile ? (
         <div className="content">
             <div className="profile-picture-section">

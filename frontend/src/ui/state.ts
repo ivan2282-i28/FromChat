@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { Message, User } from "../core/types";
+import type { Message, User, UserProfile } from "../core/types";
 import { request } from "../core/websocket";
 import { MessagePanel } from "./panels/MessagePanel";
 import { PublicChatPanel } from "./panels/PublicChatPanel";
@@ -10,7 +10,7 @@ import { API_BASE_URL } from "../core/config";
 import { initialize, subscribe, startElectronReceiver, isSupported } from "../utils/push-notifications";
 import { isElectron } from "../electron/electron";
 
-type Page = "login" | "register" | "chat"
+type Page = "login" | "register" | "chat" | "profile" | "user-profile" | "settings"
 export type ChatTabs = "chats" | "channels" | "contacts" | "dms"
 
 interface ActiveDM {
@@ -31,6 +31,9 @@ interface ChatState {
     dmPanel: DMPanel | null;
     isMobileView: boolean;
     showChatList: boolean;
+    mobileScreenData: {
+        userProfile: UserProfile | null;
+    };
 }
 
 export interface UserState {
@@ -60,6 +63,7 @@ interface AppState {
     setIsMobileView: (isMobile: boolean) => void;
     setShowChatList: (show: boolean) => void;
     navigateBack: () => void;
+    setMobileScreenData: (data: { userProfile?: UserProfile | null }) => void;
     
     // User state
     user: UserState;
@@ -84,7 +88,10 @@ export const useAppState = create<AppState>((set, get) => ({
         publicChatPanel: null,
         dmPanel: null,
         isMobileView: false,
-        showChatList: true
+        showChatList: true,
+        mobileScreenData: {
+            userProfile: null
+        }
     },
     setIsChatSwitching: (value: boolean) => set((state) => ({
         chat: {
@@ -387,5 +394,15 @@ export const useAppState = create<AppState>((set, get) => ({
             state.setShowChatList(true);
             state.setActivePanel(null);
         }
-    }
+    },
+    
+    setMobileScreenData: (data: { userProfile?: UserProfile | null }) => set((state) => ({
+        chat: {
+            ...state.chat,
+            mobileScreenData: {
+                ...state.chat.mobileScreenData,
+                ...data
+            }
+        }
+    }))
 }));

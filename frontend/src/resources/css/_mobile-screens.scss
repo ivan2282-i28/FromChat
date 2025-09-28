@@ -1,0 +1,409 @@
+@use "common/colors" as *;
+@use "common/material" as *;
+
+// Mobile screen transitions
+.mobile-screen-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+
+    .screen-wrapper {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        transition: transform 0.3s ease;
+
+        &.current-screen {
+            z-index: 2;
+            transform: translateX(0);
+            
+            // Initial positions for new screens
+            &.slide-left {
+                transform: translateX(100%);
+                animation: slideInFromRight 0.3s ease forwards;
+            }
+            &.slide-right {
+                transform: translateX(-100%);
+                animation: slideInFromLeft 0.3s ease forwards;
+            }
+        }
+
+        &.previous-screen {
+            z-index: 1;
+            transform: translateX(0);
+            
+            // Exit animations
+            &.slide-left {
+                animation: slideOutToLeft 0.3s ease forwards;
+            }
+            &.slide-right {
+                animation: slideOutToRight 0.3s ease forwards;
+            }
+        }
+    }
+}
+
+@keyframes slideInFromRight {
+    from {
+        transform: translateX(100%);
+    }
+    to {
+        transform: translateX(0);
+    }
+}
+
+@keyframes slideInFromLeft {
+    from {
+        transform: translateX(-100%);
+    }
+    to {
+        transform: translateX(0);
+    }
+}
+
+@keyframes slideOutToLeft {
+    from {
+        transform: translateX(0);
+    }
+    to {
+        transform: translateX(-100%);
+    }
+}
+
+@keyframes slideOutToRight {
+    from {
+        transform: translateX(0);
+    }
+    to {
+        transform: translateX(100%);
+    }
+}
+
+// Mobile screens styling
+.profile-screen,
+.user-profile-screen,
+.settings-screen {
+    height: 100vh;
+    width: 100vw;
+    display: flex;
+    flex-direction: column;
+    background-color: $color-dark-surface;
+    color: $color-dark-on-surface;
+    overflow: hidden;
+
+    .profile-header,
+    .settings-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px;
+        background-color: $color-dark-surface-container;
+        border-bottom: 1px solid $color-dark-outline;
+        min-height: 56px;
+
+        h2 {
+            margin: 0;
+            font-size: 1.25rem;
+            font-weight: 500;
+            color: $color-dark-on-surface;
+            flex: 1;
+            text-align: center;
+        }
+
+        mdui-button-icon {
+            color: $color-dark-on-surface;
+            flex-shrink: 0;
+        }
+
+        > div:first-child {
+            width: 40px;
+        }
+
+        > div:last-child {
+            width: 40px;
+        }
+    }
+
+    .profile-content,
+    .settings-content {
+        flex: 1;
+        overflow-y: auto;
+        padding: 24px 16px;
+    }
+
+    .profile-picture-section {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 32px;
+
+        .profile-picture-container {
+            position: relative;
+            display: inline-block;
+
+            img {
+                width: 120px;
+                height: 120px;
+                border-radius: 50%;
+                object-fit: cover;
+                border: 3px solid $color-dark-outline;
+            }
+
+            .upload-overlay {
+                position: absolute;
+                bottom: 8px;
+                right: 8px;
+                background-color: $color-dark-primary;
+                color: $color-dark-on-primary;
+                border-radius: 50%;
+                width: 36px;
+                height: 36px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            }
+        }
+
+        .profile-picture {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid $color-dark-outline;
+        }
+    }
+
+    .profile-info {
+        text-align: center;
+
+        .username-section {
+            margin-bottom: 24px;
+
+            .username {
+                font-size: 1.5rem;
+                font-weight: 600;
+                margin: 0 0 8px 0;
+                color: $color-dark-on-surface;
+            }
+
+            .online-status {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                font-size: 0.9rem;
+                color: $color-dark-on-surface-variant;
+
+                .online-indicator,
+                .offline-indicator {
+                    width: 8px;
+                    height: 8px;
+                    border-radius: 50%;
+                }
+
+                .online-indicator {
+                    background-color: $success;
+                }
+
+                .offline-indicator {
+                    background-color: $color-dark-on-surface-variant;
+                }
+
+                &.online {
+                    color: $color-dark-on-surface;
+                }
+            }
+        }
+
+        .bio-section {
+            margin-bottom: 24px;
+            text-align: left;
+
+            label {
+                display: block;
+                font-weight: 500;
+                margin-bottom: 8px;
+                color: $color-dark-on-surface;
+            }
+
+            .bio-display {
+                background-color: $color-dark-surface-container;
+                padding: 12px;
+                border-radius: 8px;
+                color: $color-dark-on-surface-variant;
+                line-height: 1.5;
+            }
+        }
+
+        .profile-stats {
+            margin-bottom: 24px;
+
+            .stat {
+                display: flex;
+                justify-content: space-between;
+                padding: 8px 0;
+                border-bottom: 1px solid $color-dark-outline;
+
+                &:last-child {
+                    border-bottom: none;
+                }
+
+                .stat-label {
+                    color: $color-dark-on-surface-variant;
+                    font-size: 0.9rem;
+                }
+
+                .stat-value {
+                    color: $color-dark-on-surface;
+                    font-size: 0.9rem;
+                }
+            }
+        }
+
+        .profile-actions {
+            margin-top: 24px;
+
+            mdui-button {
+                width: 100%;
+                margin-bottom: 12px;
+
+                &:last-child {
+                    margin-bottom: 0;
+                }
+            }
+        }
+    }
+
+    .settings-categories {
+        mdui-list {
+            background-color: transparent;
+        }
+    }
+
+    .settings-panel-content {
+        .settings-panel {
+            display: none;
+
+            &.active {
+                display: block;
+            }
+
+            h3 {
+                margin: 0 0 24px 0;
+                color: $color-dark-on-surface;
+                font-size: 1.5rem;
+                font-weight: 500;
+            }
+
+            mdui-switch {
+                margin-bottom: 16px;
+                display: block;
+
+                --mdui-color-primary: $color-dark-primary;
+                --mdui-color-on-primary: $color-dark-on-primary;
+                --mdui-color-surface: transparent;
+                --mdui-color-on-surface: $color-dark-on-surface;
+            }
+
+            mdui-select {
+                margin-bottom: 16px;
+                display: block;
+                width: 100%;
+
+                --mdui-color-primary: $color-dark-primary;
+                --mdui-color-on-primary: $color-dark-on-primary;
+                --mdui-color-surface: $color-dark-surface-container;
+                --mdui-color-on-surface: $color-dark-on-surface;
+                --mdui-color-outline: $color-dark-outline;
+            }
+
+            mdui-button {
+                margin-bottom: 16px;
+                display: block;
+
+                --mdui-color-primary: $color-dark-primary;
+                --mdui-color-on-primary: $color-dark-on-primary;
+                --mdui-color-surface: transparent;
+                --mdui-color-on-surface: $color-dark-on-surface;
+                --mdui-color-outline: $color-dark-outline;
+            }
+
+            mdui-linear-progress {
+                margin: 16px 0;
+                display: block;
+
+                --mdui-color-primary: $color-dark-primary;
+            }
+
+            p {
+                color: $color-dark-on-surface-variant;
+                margin-bottom: 16px;
+                line-height: 1.5;
+
+                .product-name {
+                    color: $color-dark-primary;
+                    font-weight: 500;
+                }
+            }
+        }
+    }
+
+    .cropper-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background-color: rgba(0, 0, 0, 0.8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+
+        .cropper-modal-content {
+            background-color: $color-dark-surface-container;
+            border-radius: 12px;
+            padding: 16px;
+            max-width: 90vw;
+            max-height: 90vh;
+            overflow: auto;
+
+            .cropper-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 16px;
+
+                h3 {
+                    margin: 0;
+                    color: $color-dark-on-surface;
+                }
+
+                mdui-button-icon {
+                    color: $color-dark-on-surface;
+                }
+            }
+
+            .cropper-container {
+                width: 100%;
+                min-height: 300px;
+            }
+        }
+    }
+
+    .error-message {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        color: $color-dark-on-surface-variant;
+        text-align: center;
+
+        p {
+            font-size: 1.1rem;
+        }
+    }
+}
