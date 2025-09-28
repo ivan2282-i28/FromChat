@@ -18,15 +18,19 @@
 
         &.current-screen {
             z-index: 2;
-            transform: translateX(0);
+            
+            // Default state - no animation
+            &:not(.slide-left):not(.slide-right) {
+                transform: translateX(0);
+            }
             
             // Initial positions for new screens
             &.slide-left {
-                transform: translateX(100%);
+                transform: translateX(100%) !important;
                 animation: slideInFromRight 0.3s ease forwards;
             }
             &.slide-right {
-                transform: translateX(-100%);
+                transform: translateX(-100%) !important;
                 animation: slideInFromLeft 0.3s ease forwards;
             }
         }
@@ -47,19 +51,19 @@
 }
 
 @keyframes slideInFromRight {
-    from {
+    0% {
         transform: translateX(100%);
     }
-    to {
+    100% {
         transform: translateX(0);
     }
 }
 
 @keyframes slideInFromLeft {
-    from {
+    0% {
         transform: translateX(-100%);
     }
-    to {
+    100% {
         transform: translateX(0);
     }
 }

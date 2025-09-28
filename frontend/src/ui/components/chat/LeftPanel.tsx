@@ -12,6 +12,10 @@ function BottomAppBar() {
     const [settingsOpen, onSettingsOpenChange] = useState(false);
     const { logout } = useAppState();
 
+    const handleLogout = () => {
+        logout();
+    };
+
     return (
         <>
             <mdui-bottom-app-bar>
@@ -21,7 +25,7 @@ function BottomAppBar() {
                 <mdui-button-icon 
                     icon="logout--filled" 
                     id="logout-btn" 
-                    onClick={logout}
+                    onClick={handleLogout}
                     title="Выйти"
                 ></mdui-button-icon>
                 <mdui-fab icon="edit--filled"></mdui-fab>

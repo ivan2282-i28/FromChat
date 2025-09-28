@@ -25,11 +25,15 @@ export default function App() {
     useEffect(() => {
         if (isMobile && currentPage !== previousPage) {
             setIsTransitioning(true);
-            const timer = setTimeout(() => {
+            
+            const endTimer = setTimeout(() => {
                 setIsTransitioning(false);
                 setPreviousPage(currentPage);
             }, 300);
-            return () => clearTimeout(timer);
+            
+            return () => {
+                clearTimeout(endTimer);
+            };
         } else if (!isMobile) {
             setPreviousPage(currentPage);
         }
