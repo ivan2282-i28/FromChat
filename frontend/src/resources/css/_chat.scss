@@ -3,6 +3,8 @@
 
 #chat-interface {
     height: 100%;
+    width: 100%;
+    overflow: hidden;
 
     .header {
         display: flex;
@@ -75,11 +77,8 @@
                 box-shadow: black 0 0 20px;
                 position: relative;
 
-                .back-button {
-                    position: absolute;
-                    left: 16px;
-                    z-index: 10;
-                    color: $color-dark-on-surface;
+                @media (max-width: 800px) {
+                    padding: 10px;
                 }
 
                 .chat-header-avatar {
@@ -87,14 +86,7 @@
                     height: 45px;
                     border-radius: 20%;
                     object-fit: cover;
-                    margin-right: 1rem;
-                }
-
-                // Only add margin on mobile when back button is present
-                @media (max-width: 800px) {
-                    .chat-header-avatar {
-                        margin-left: 60px; // Make room for back button on mobile
-                    }
+                    margin: 0 15px 0 10px;
                 }
 
                 .chat-header-info {

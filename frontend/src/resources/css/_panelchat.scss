@@ -9,24 +9,25 @@ $chat-list-width: 30%;
     flex-direction: row;
     width: 100%;
     height: 100%;
+    overflow: hidden;
     transition: all 0.3s ease;
 
     // Default desktop layout
     .chat-list {
-        position: relative !important;
-        transform: none !important;
-        width: $chat-list-width !important;
-        height: 100% !important;
+        position: relative;
+        transform: none;
+        width: $chat-list-width;
+        height: 100%;
     }
 
     .chat-container {
-        position: relative !important;
-        transform: none !important;
-        flex: 1 !important;
-        height: 100% !important;
+        position: relative;
+        transform: none;
+        flex: 1;
+        height: 100%;
     }
 
-    // Mobile layout overrides
+    // Mobile layout overrides - more specific selectors
     &.mobile {
         #chat-list {
             width: 100% !important;
@@ -38,7 +39,7 @@ $chat-list-width: 30%;
             transition: transform 0.3s ease !important;
 
             &.hidden {
-                transform: translateX(-100%) !important;
+                transform: translateX(100%) !important;
             }
         }
 
@@ -52,7 +53,7 @@ $chat-list-width: 30%;
             transition: transform 0.3s ease !important;
 
             &.hidden {
-                transform: translateX(-100%) !important;
+                transform: translateX(100%) !important;
             }
         }
 
@@ -66,7 +67,7 @@ $chat-list-width: 30%;
             transition: transform 0.3s ease !important;
 
             &.hidden {
-                transform: translateX(100%) !important;
+                transform: translateX(-100%) !important;
             }
         }
     }
@@ -107,16 +108,16 @@ $chat-list-width: 30%;
 }
 
 #chat-list {
-    display: flex !important;
-    flex-direction: column !important;
-    flex-grow: 0 !important;
-    width: $chat-list-width !important;
-    background-color: $color-dark-surface-container !important;
-    height: 100% !important;
-    z-index: 1000 !important;
-    min-height: 0 !important; // allow children to manage their own scrolling
-    position: relative !important;
-    transform: none !important;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 0;
+    width: $chat-list-width;
+    background-color: $color-dark-surface-container;
+    height: 100%;
+    z-index: 1000;
+    min-height: 0; // allow children to manage their own scrolling
+    position: relative;
+    transform: none;
 
     .chat-header-left {
         display: flex;

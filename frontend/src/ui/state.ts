@@ -363,13 +363,7 @@ export const useAppState = create<AppState>((set, get) => ({
     switchToTab: async (tab: ChatTabs) => {
         const state = get();
         state.setActiveTab(tab);
-        
-        if (tab === "chats") {
-            await state.switchToPublicChat("Общий чат");
-        } else if (tab === "dms") {
-            // DM tab - no specific panel until user is selected
-            state.setActivePanel(null);
-        }
+        state.setActivePanel(null);
     },
     
     setIsMobileView: (isMobile: boolean) => set((state) => ({

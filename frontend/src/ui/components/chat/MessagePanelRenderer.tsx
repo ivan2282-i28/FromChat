@@ -25,6 +25,7 @@ export function MessagePanelRenderer({ panel, isChatSwitching }: MessagePanelRen
     const [editMessage, setEditMessage] = useState<Message | null>(null);
     const [editVisible, setEditVisible] = useState(Boolean(editMessage));
     const [pendingAction, setPendingAction] = useState<null | { type: "reply" | "edit"; message: Message }>(null);
+    const { isMobileView, showChatList } = chat;
 
     // Drag & drop
     const [isDragging, setIsDragging] = useState(false);
@@ -91,7 +92,7 @@ export function MessagePanelRenderer({ panel, isChatSwitching }: MessagePanelRen
 
     // Handle chat switching animation
     useEffect(() => {
-        if (isChatSwitching) {
+        if (isChatSwitching && !chat.isMobileView) {
             setSwitchOut(true);
             setTimeout(() => {
                 setSwitchOut(false);
@@ -99,7 +100,7 @@ export function MessagePanelRenderer({ panel, isChatSwitching }: MessagePanelRen
                 setTimeout(() => setSwitchIn(false), 200);
             }, 250);
         }
-    }, [isChatSwitching]);
+    }, [isChatSwitching, chat.isMobileView]);
 
     // Scroll to bottom when messages change
     useEffect(() => {
@@ -139,8 +140,8 @@ export function MessagePanelRenderer({ panel, isChatSwitching }: MessagePanelRen
     }
 
     return (
-        <div className={`chat-container ${switchIn ? "chat-switch-in" : ""} ${switchOut ? "chat-switch-out" : ""}`}>
-            <div 
+        <div className={`chat-container ${switchIn ? "chat-switch-in" : ""} ${switchOut ? "chat-switch-out" : ""} ${isMobileView && showChatList ? "hidden" : ""}`}>
+            <div
                 className="chat-main" 
                 id="chat-inner"
                 onDragEnter={(e) => {

@@ -9,9 +9,6 @@ export default function ChatScreen() {
     const { chat, setIsMobileView, setShowChatList } = useAppState();
     const isMobile = width < 800;
 
-    // Debug logging
-    console.log("Screen width:", width, "isMobile:", isMobile);
-
     // Update mobile view state when screen size changes
     useEffect(() => {
         setIsMobileView(isMobile);
