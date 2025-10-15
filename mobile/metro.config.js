@@ -3,23 +3,20 @@ const path = require('path');
 
 const config = getDefaultConfig(__dirname);
 
-// Only watch specific directories from the parent to improve performance
+// Add the parent directory to the watchFolders
 config.watchFolders = [
-    path.resolve(__dirname, '../package.json'),
-    path.resolve(__dirname, '../node_modules'),
+  path.resolve(__dirname, '..'),
 ];
 
-// Add the parent node_modules to the resolver
+// Use parent node_modules as the primary source
 config.resolver.nodeModulesPaths = [
-    path.resolve(__dirname, '../node_modules'),
+  path.resolve(__dirname, '../node_modules'),
 ];
 
-// Ignore other files in parent directory to reduce file watching
-config.resolver.blockList = [
-    /.*\/backend\/.*/,
-    /.*\/frontend\/.*/,
-    /.*\/deployment\/.*/,
-    /.*\/build\/.*/,
-];
+// Ensure proper resolver configuration
+config.resolver.platforms = ['ios', 'android', 'native'];
 
-export default config;
+// Fix module resolution by disabling package exports
+config.resolver.unstable_enablePackageExports = false;
+
+module.exports = config;

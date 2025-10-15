@@ -7,5 +7,5 @@ export const MOBILE_CONFIG = {
     websocketUrl: __DEV__
         ? 'ws://localhost:8300/api'
         : 'wss://beta.fromchat.ru/api',
-    platform: Platform.OS as 'ios' | 'android',
+    platform: Platform.OS as 'ios' | 'android' | 'web',
 };
