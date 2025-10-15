@@ -55,7 +55,24 @@
             },
             "isBackground": true
         },
-
+        {
+            "label": "Mobile (Expo)",
+            "type": "npm",
+            "script": "mobile:start",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "group": {
+                "kind": "build"
+            },
+            "isBackground": true
+        },
         {
             "label": "Web",
             "dependsOn": ["Backend", "Frontend (Web)"],
@@ -74,6 +91,20 @@
         {
             "label": "Electron",
             "dependsOn": ["Backend", "Frontend (Electron)"],
+            "dependsOrder": "parallel",
+            "group": {
+                "kind": "build"
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "Mobile",
+            "dependsOn": ["Backend", "Mobile (Expo)"],
             "dependsOrder": "parallel",
             "group": {
                 "kind": "build"
