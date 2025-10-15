@@ -95,6 +95,7 @@
         "react-native-screens": "~3.29.0",
         "react-native-webrtc": "^124.0.0",
         "react-router-dom": "^7.9.3",
+        "tsx": "^4.20.6",
         "tweetnacl": "^1.0.3",
         "use-immer": "^0.11.0",
         "zustand": "^5.0.8"

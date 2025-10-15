@@ -12,5 +12,5 @@
   "include": [
     "**/*.ts",
     "**/*.tsx"
-, "metro.config.js", "babel.config.js"  ]
+, "metro.config.ts", "babel.config.ts"  ]
 }
