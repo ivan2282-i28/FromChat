@@ -5,7 +5,7 @@ export default ({ config }: ConfigContext): ExpoConfig & { main: string } => ({
     name: "FromChat",
     slug: "fromchat-mobile",
     version: "1.0.0",
-    main: "index.js",
+    main: "index.ts",
     orientation: "portrait",
     icon: "./assets/icon.png",
     userInterfaceStyle: "automatic",
