@@ -19,14 +19,14 @@ export default ({ config }: ConfigContext): ExpoConfig & { main: string } => ({
     ],
     ios: {
         supportsTablet: true,
-        bundleIdentifier: "com.fromchat.mobile"
+        bundleIdentifier: "ru.fromchat"
     },
     android: {
         adaptiveIcon: {
             foregroundImage: "./assets/adaptive-icon.png",
             backgroundColor: "#ffffff"
         },
-        package: "com.fromchat.mobile"
+        package: "ru.fromchat"
     },
     plugins: [
         "expo-notifications",
