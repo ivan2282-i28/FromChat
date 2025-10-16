@@ -1,66 +1,39 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { PaperProvider, MD3LightTheme, MD3DarkTheme, Text, BottomNavigation, useTheme } from 'react-native-paper';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { StyleSheet, Animated, useColorScheme } from 'react-native';
+import { StyleSheet, Animated, useColorScheme, View } from 'react-native';
 
 // Animated placeholder screens with theme support
 function ChatsScreen() {
-    const fadeAnim = useRef(new Animated.Value(0)).current;
     const theme = useTheme();
 
-    useEffect(() => {
-        Animated.timing(fadeAnim, {
-            toValue: 1,
-            duration: 300,
-            useNativeDriver: true,
-        }).start();
-    }, [fadeAnim]);
-
     return (
-        <Animated.View style={[styles.screen, { opacity: fadeAnim }]}>
+        <View style={styles.screen}>
             <Text style={[styles.screenTitle, { color: theme.colors.onSurface }]}>Chats</Text>
             <Text style={[styles.screenSubtitle, { color: theme.colors.onSurfaceVariant }]}>Your conversations will appear here</Text>
-        </Animated.View>
+        </View>
     );
 }
 
 function ContactsScreen() {
-    const fadeAnim = useRef(new Animated.Value(0)).current;
     const theme = useTheme();
 
-    useEffect(() => {
-        Animated.timing(fadeAnim, {
-            toValue: 1,
-            duration: 300,
-            useNativeDriver: true,
-        }).start();
-    }, [fadeAnim]);
-
     return (
-        <Animated.View style={[styles.screen, { opacity: fadeAnim }]}>
+        <View style={styles.screen}>
             <Text style={[styles.screenTitle, { color: theme.colors.onSurface }]}>Contacts</Text>
             <Text style={[styles.screenSubtitle, { color: theme.colors.onSurfaceVariant }]}>Your contacts will appear here</Text>
-        </Animated.View>
+        </View>
     );
 }
 
 function SettingsScreen() {
-    const fadeAnim = useRef(new Animated.Value(0)).current;
     const theme = useTheme();
 
-    useEffect(() => {
-        Animated.timing(fadeAnim, {
-            toValue: 1,
-            duration: 300,
-            useNativeDriver: true,
-        }).start();
-    }, [fadeAnim]);
-
     return (
-        <Animated.View style={[styles.screen, { opacity: fadeAnim }]}>
+        <View style={styles.screen}>
             <Text style={[styles.screenTitle, { color: theme.colors.onSurface }]}>Settings</Text>
             <Text style={[styles.screenSubtitle, { color: theme.colors.onSurfaceVariant }]}>App settings will appear here</Text>
-        </Animated.View>
+        </View>
     );
 }
 
