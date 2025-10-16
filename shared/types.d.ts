@@ -171,6 +171,10 @@ export interface UploadPublicKeyRequest {
     publicKey: string;
 }
 
+export interface PublicKeyResponse {
+    publicKey: string;
+}
+
 export interface SendDMRequest {
     recipientId: number;
     iv: string;

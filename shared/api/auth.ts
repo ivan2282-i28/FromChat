@@ -1,4 +1,4 @@
-import type { BackupBlob, Headers, UploadPublicKeyRequest } from "../types";
+import type { BackupBlob, Headers, PublicKeyResponse, UploadPublicKeyRequest } from "../types.d";
 import { b64, ub64 } from "../utils";
 
 /**
@@ -23,7 +23,7 @@ export async function fetchPublicKey(API_BASE_URL: string, token: string): Promi
 	const headers = getAuthHeaders(token, true);
 	const res = await fetch(`${API_BASE_URL}/crypto/public-key`, { method: "GET", headers });
 	if (!res.ok) return null;
-	const data = await res.json();
+	const data = await res.json() as PublicKeyResponse;
 	if (!data?.publicKey) return null;
 	return ub64(data.publicKey);
 }
@@ -48,7 +48,7 @@ export async function fetchBackupBlob(API_BASE_URL: string, token: string): Prom
 		headers 
 	});
 	if (res.ok) {
-		const response: BackupBlob = await res.json();
+		const response = await res.json() as BackupBlob;
 		return response.blob;
 	} else {
 		return null;

@@ -1,4 +1,4 @@
-import type { WebSocketMessage } from "./types";
+import type { WebSocketMessage } from "./types.d";
 import { delay } from "./utils";
 
 export function request<Request, Response = any>(
