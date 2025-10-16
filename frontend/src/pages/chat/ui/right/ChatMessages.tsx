@@ -1,7 +1,7 @@
 import { Message } from "./Message";
 import { useAppState } from "@/pages/chat/state";
-import type { Message as MessageType } from "@/core/types";
-import type { UserProfile } from "@/core/types";
+import type { Message as MessageType } from "@fromchat/shared/types";
+import type { UserProfile } from "@fromchat/shared/types";
 import { UserProfileDialog } from "./UserProfileDialog";
 import { MessageContextMenu, type ContextMenuState } from "./MessageContextMenu";
 import { fetchUserProfile } from "@/core/api/profileApi";
@@ -9,7 +9,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { delay } from "@/utils/utils";
 import { MaterialDialog } from "@/core/components/Dialog";
 import { request } from "@/core/websocket";
-import type { AddReactionRequest, AddDmReactionRequest } from "@/core/types";
+import type { AddReactionRequest, AddDmReactionRequest } from "@fromchat/shared/types";
 
 interface ChatMessagesProps {
     messages?: MessageType[];

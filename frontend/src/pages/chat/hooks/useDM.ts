@@ -7,7 +7,7 @@ import {
     decryptDm, 
     sendDMViaWebSocket 
 } from "@/core/api/dmApi";
-import type { User, Message, DmEncryptedJSON } from "@/core/types";
+import type { User, Message, DmEncryptedJSON } from "@fromchat/shared/types";
 import { websocket } from "@/core/websocket";
 
 export interface DMUser extends User {

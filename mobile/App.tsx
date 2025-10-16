@@ -1,12 +1,10 @@
-/// <reference types="./types.d.ts" />
-
 import React, { useState } from 'react';
 import { PaperProvider, MD3LightTheme, MD3DarkTheme, BottomNavigation } from 'react-native-paper';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useColorScheme, View } from 'react-native';
-import ChatsTab from './tabs/ChatsTab';
-import ContactsTab from './tabs/ContactsTab';
-import SettingsTab from './tabs/SettingsTab';
+import ChatsTab from './src/tabs/ChatsTab';
+import ContactsTab from './src/tabs/ContactsTab';
+import SettingsTab from './src/tabs/SettingsTab';
 
 export default function App() {
     const [index, setIndex] = useState(0);

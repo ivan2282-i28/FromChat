@@ -6,7 +6,7 @@
  */
 
 import { API_WS_BASE_URL } from "./config";
-import type { WebSocketMessage } from "./types";
+import type { WebSocketMessage } from "@fromchat/shared/types";
 import { delay } from "@/utils/utils";
 import { CallSignalingHandler } from "./calls/signaling";
 

@@ -1,4 +1,4 @@
-import type { CallSignalingMessage, CallAcceptData, CallRejectData, CallOfferData, CallAnswerData, CallIceCandidateData, CallEndData, CallVideoToggleData, CallScreenShareToggleData, CallInviteMessageData } from "@/core/types";
+import type { CallSignalingMessage, CallAcceptData, CallRejectData, CallOfferData, CallAnswerData, CallIceCandidateData, CallEndData, CallVideoToggleData, CallScreenShareToggleData, CallInviteMessageData } from "@fromchat/shared/types";
 import * as WebRTC from "./webrtc";
 
 export interface CallState {

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, type FormEvent } from "react";
 import defaultAvatar from "@/images/default-avatar.png";
 import type { TextField } from "mdui/components/text-field";
-import type { DialogProps } from "@/core/types";
+import type { DialogProps } from "@fromchat/shared/types";
 import { MaterialDialog } from "@/core/components/Dialog";
 import useProfile from "@/pages/chat/hooks/useProfile";
 import { ImageCropper } from "./ImageCropper";

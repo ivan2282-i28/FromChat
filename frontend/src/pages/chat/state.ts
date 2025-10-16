@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { Message, User } from "@/core/types";
+import type { Message, User } from "@fromchat/shared/types";
 import { request } from "@/core/websocket";
 import { MessagePanel } from "./ui/right/panels/MessagePanel";
 import { PublicChatPanel } from "./ui/right/panels/PublicChatPanel";

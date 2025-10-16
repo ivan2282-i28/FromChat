@@ -1,5 +1,5 @@
 import { getAuthHeaders, getAuthToken } from "@/core/api/authApi";
-import type { CallSignalingMessage, IceServersResponse, WrappedSessionKeyPayload } from "@/core/types";
+import type { CallSignalingMessage, IceServersResponse, WrappedSessionKeyPayload } from "@fromchat/shared/types";
 import { request } from "@/core/websocket";
 import { wrapCallSessionKeyForRecipient, unwrapCallSessionKeyFromSender, rotateCallSessionKey } from "./encryption";
 import { fetchUserPublicKey } from "@/core/api/dmApi";

@@ -1,5 +1,5 @@
 import { formatTime, id } from "@/utils/utils";
-import type { Attachment, Message as MessageType, Reaction } from "@/core/types";
+import type { Attachment, Message as MessageType, Reaction } from "@fromchat/shared/types";
 import defaultAvatar from "@/images/default-avatar.png";
 import Quote from "@/core/components/Quote";
 import { parse } from "marked";

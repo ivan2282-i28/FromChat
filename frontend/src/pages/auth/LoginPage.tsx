@@ -1,7 +1,7 @@
 import { useImmer } from "use-immer";
 import { AlertsContainer, type Alert, type AlertType } from "./Auth";
 import { AuthContainer, AuthHeader } from "./Auth";
-import type { ErrorResponse, LoginRequest, LoginResponse } from "@/core/types";
+import type { ErrorResponse, LoginRequest, LoginResponse } from "@fromchat/shared/types";
 import { ensureKeysOnLogin } from "@/core/api/authApi";
 import { API_BASE_URL } from "@/core/config";
 import { useRef } from "react";

@@ -1,7 +1,7 @@
 import { API_BASE_URL } from "@/core/config";
 import { isElectron } from "@/core/electron/electron";
 import { websocket } from "@/core/websocket";
-import type { NewMessageWebSocketMessage, WebSocketMessage } from "@/core/types";
+import type { NewMessageWebSocketMessage, WebSocketMessage } from "@fromchat/shared/types";
 import serviceWorker from "./service-worker?worker&url";
 
 export interface PushSubscriptionData {

@@ -3,7 +3,7 @@ import { randomBytes } from "@/utils/crypto/kdf";
 import { b64, ub64 } from "@/utils/utils";
 import { ecdhSharedSecret, deriveWrappingKey } from "@/utils/crypto/asymmetric";
 import { getCurrentKeys } from "@/core/api/authApi";
-import type { WrappedSessionKeyPayload } from "@/core/types";
+import type { WrappedSessionKeyPayload } from "@fromchat/shared/types";
 
 export interface CallSessionKey {
     key: Uint8Array;

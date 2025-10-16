@@ -1,4 +1,4 @@
-import type { Message, WebSocketMessage } from "@/core/types";
+import type { Message, WebSocketMessage } from "@fromchat/shared/types";
 import type { UserState } from "@/pages/chat/state";
 
 export interface MessagePanelState {

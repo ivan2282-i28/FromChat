@@ -7,7 +7,7 @@ import {
     editDmEnvelope,
     deleteDmEnvelope
 } from "@/core/api/dmApi";
-import type { DmEncryptedJSON, DmEnvelope, DMWebSocketMessage, EncryptedMessageJson, Message } from "@/core/types";
+import type { DmEncryptedJSON, DmEnvelope, DMWebSocketMessage, EncryptedMessageJson, Message } from "@fromchat/shared/types";
 import type { UserState } from "@/pages/chat/state";
 
 export interface DMPanelData {

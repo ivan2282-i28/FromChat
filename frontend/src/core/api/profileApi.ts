@@ -1,6 +1,6 @@
 import { getAuthHeaders } from "./authApi";
 import { API_BASE_URL } from "@/core/config";
-import type { UserProfile } from "@/core/types";
+import type { UserProfile } from "@fromchat/shared/types";
 
 export interface ProfileData {
     profile_picture?: string;

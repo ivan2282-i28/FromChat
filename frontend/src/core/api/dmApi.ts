@@ -5,7 +5,7 @@ import { importAesGcmKey, aesGcmEncrypt, aesGcmDecrypt } from "@/utils/crypto/sy
 import { randomBytes } from "@/utils/crypto/kdf";
 import { getCurrentKeys } from "./authApi";
 import { request } from "@/core/websocket";
-import type { SendDMRequest, DmEnvelope, User, DMEditRequest, DmEncryptedJSON, BaseDmEnvelope } from "@/core/types";
+import type { SendDMRequest, DmEnvelope, User, DMEditRequest, DmEncryptedJSON, BaseDmEnvelope } from "@fromchat/shared/types";
 import { b64, ub64 } from "@/utils/utils";
 
 export async function decryptDm(envelope: DmEnvelope, senderPublicKeyB64: string): Promise<string> {

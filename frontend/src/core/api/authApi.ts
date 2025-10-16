@@ -1,4 +1,4 @@
-import type { Headers, UploadPublicKeyRequest, BackupBlob } from "@/core/types";
+import type { Headers, UploadPublicKeyRequest, BackupBlob } from "@fromchat/shared/types";
 import { generateX25519KeyPair } from "@/utils/crypto/asymmetric";
 import { encodeBlob, encryptBackupWithPassword, decryptBackupWithPassword, decodeBlob } from "@/utils/crypto/backup";
 import { b64, ub64 } from "@/utils/utils";
