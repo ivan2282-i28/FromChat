@@ -7,6 +7,7 @@ export default {
     ...config,
     watchFolders: [
         path.resolve(__dirname, '..'),
+        path.resolve(__dirname, 'src'),
     ],
     resolver: {
         ...config.resolver,
