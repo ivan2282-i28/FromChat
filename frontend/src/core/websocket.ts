@@ -7,8 +7,8 @@
 
 import { API_WS_BASE_URL } from "./config";
 import type { WebSocketMessage } from "@fromchat/shared/types";
-import { delay } from "@/utils/utils";
 import { CallSignalingHandler } from "./calls/signaling";
+import { onError as sharedOnError, request as sharedRequest } from "@fromchat/shared/websocket";
 
 /**
  * Creates a new WebSocket connection to the chat server
@@ -58,50 +58,10 @@ export function setCallSignalingHandler(handler: CallSignalingHandler | null): v
 }
 
 export function request<Request, Response = any>(payload: WebSocketMessage<Request>): Promise<WebSocketMessage<Response>> {
-    console.log("WebSocket request:", payload);
-    return new Promise((resolve, reject) => {
-        function requestInner() {
-            let listener: ((e: MessageEvent) => void) | null = null;
-            listener = (e) => {
-                resolve(JSON.parse(e.data));
-                websocket.removeEventListener("message", listener!);
-            }
-            websocket.addEventListener("message", listener);
-            websocket.send(JSON.stringify(payload))
-
-            setTimeout(() => reject("Request timed out"), 10000);
-        }
-
-        if (websocket.readyState == 0) {
-            websocket.addEventListener("open", requestInner);
-            setTimeout(() => reject("Request timed out"), 10000);
-        } else {
-            requestInner();
-        }
-    })
+    return sharedRequest(websocket, payload);
 }
 
-/**
- * This function will wait 3 seconds and them attempts to reconnect the WebSocket.
- * If it fails, tries again in an endless loop until the connection is established
- * again.
- * 
- * @private
- */
-async function onError() {
-    console.warn("WebSocket disconnected, retrying in 3 seconds...");
-    await delay(3000);
-    websocket = create();
-
-    let listener: () => void | null;
-    listener = () => {
-        console.log("WebSocket successfully reconnected!");
-        websocket.removeEventListener("open", listener);
-    }
-
-    websocket.addEventListener("open", listener);
-    websocket.addEventListener("error", onError);
-}
+export const onError = sharedOnError(() => websocket = create(), websocket);
 
 // --------------
 // Initialization

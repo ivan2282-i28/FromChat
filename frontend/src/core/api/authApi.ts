@@ -1,76 +1,42 @@
-import type { Headers, UploadPublicKeyRequest, BackupBlob } from "@fromchat/shared/types";
 import { generateX25519KeyPair } from "@/utils/crypto/asymmetric";
 import { encodeBlob, encryptBackupWithPassword, decryptBackupWithPassword, decodeBlob } from "@/utils/crypto/backup";
 import { b64, ub64 } from "@/utils/utils";
 import { API_BASE_URL } from "@/core/config";
+import { 
+	fetchBackupBlob as sfetchBackupBlob, 
+	uploadBackupBlob as suploadBackupBlob, 
+	fetchPublicKey as sfetchPublicKey, 
+	uploadPublicKey as suploadPublicKey 
+} from "@fromchat/shared/api/auth";
 
-/**
- * Generates authentication headers for API requests
- * @param {boolean} json - Whether to include JSON content type header
- * @returns {Headers} Headers object with authentication and content type
- */
-export function getAuthHeaders(token: string | null, json: boolean = true): Headers {
-    const headers: Headers = {};
+// ----------------
+// Shared functions
+// ----------------
 
-    if (json) {
-        headers["Content-Type"] = "application/json";
-    }
-
-    if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-    }
-    return headers;
+function fetchBackupBlob(token: string): Promise<string | null> {
+	return sfetchBackupBlob(API_BASE_URL, token);
 }
+
+function uploadBackupBlob(blobJson: string, token: string): Promise<void> {
+	return suploadBackupBlob(API_BASE_URL, blobJson, token);
+}
+
+function fetchPublicKey(token: string): Promise<Uint8Array | null> {
+	return sfetchPublicKey(API_BASE_URL, token);
+}
+
+function uploadPublicKey(publicKey: Uint8Array, token: string): Promise<void> {
+	return suploadPublicKey(API_BASE_URL, publicKey, token);
+}
+
+export { getAuthHeaders } from "@fromchat/shared/api/auth";
+
+// ---------------------------
+// Platform-specific functions
+// ---------------------------
 
 let currentPublicKey: Uint8Array | null = null;
 let currentPrivateKey: Uint8Array | null = null;
-
-async function fetchPublicKey(token: string): Promise<Uint8Array | null> {
-	const headers = getAuthHeaders(token, true);
-	const res = await fetch(`${API_BASE_URL}/crypto/public-key`, { method: "GET", headers });
-	if (!res.ok) return null;
-	const data = await res.json();
-	if (!data?.publicKey) return null;
-	return ub64(data.publicKey);
-}
-
-async function uploadPublicKey(publicKey: Uint8Array, token: string): Promise<void> {
-	const payload: UploadPublicKeyRequest = { 
-		publicKey: b64(publicKey) 
-	}
-
-	const headers = getAuthHeaders(token, true);
-	await fetch(`${API_BASE_URL}/crypto/public-key`, {
-		method: "POST",
-		headers,
-		body: JSON.stringify(payload)
-	});
-}
-
-async function fetchBackupBlob(token: string): Promise<string | null> {
-	const headers = getAuthHeaders(token, true);
-	const res = await fetch(`${API_BASE_URL}/crypto/backup`, { 
-		method: "GET",
-		headers 
-	});
-	if (res.ok) {
-		const response: BackupBlob = await res.json();
-		return response.blob;
-	} else {
-		return null;
-	}
-}
-
-async function uploadBackupBlob(blobJson: string, token: string): Promise<void> {
-	const payload: BackupBlob = { blob: blobJson }
-
-	const headers = getAuthHeaders(token, true);
-	await fetch(`${API_BASE_URL}/crypto/backup`, {
-		method: "POST",
-		headers,
-		body: JSON.stringify(payload)
-	});
-}
 
 export interface UserKeyPairMemory {
 	publicKey: Uint8Array;
