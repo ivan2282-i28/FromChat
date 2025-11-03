@@ -99,6 +99,14 @@ export abstract class MessagePanel {
         this.updateState({ messages: [] });
     }
 
+    public clearMessagesPublic(): void {
+        this.clearMessages();
+    }
+
+    public setAuthToken(authToken: string): void {
+        this.currentUser.authToken = authToken;
+    }
+
     protected setLoading(loading: boolean): void {
         this.updateState({ isLoading: loading });
     }

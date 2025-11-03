@@ -223,6 +223,26 @@ async def create_group(
     return {"status": "success", "group": convert_group(group, current_user.id, db)}
 
 
+@router.get("/groups/my")
+async def get_my_groups(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get groups the current user has joined"""
+    members = db.query(GroupMember).filter(
+        GroupMember.user_id == current_user.id,
+        GroupMember.is_banned == False
+    ).all()
+    
+    result = []
+    for member in members:
+        group = db.query(Group).filter(Group.id == member.group_id).first()
+        if group:
+            result.append(convert_group(group, current_user.id, db))
+    
+    return {"status": "success", "groups": result}
+
+
 @router.get("/groups/{group_id}")
 async def get_group(
     group_id: int,
@@ -902,26 +922,6 @@ async def list_groups(
     result = []
     for group in groups:
         result.append(convert_group(group, current_user.id, db))
-    
-    return {"status": "success", "groups": result}
-
-
-@router.get("/groups/my")
-async def get_my_groups(
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    """Get groups the current user has joined"""
-    members = db.query(GroupMember).filter(
-        GroupMember.user_id == current_user.id,
-        GroupMember.is_banned == False
-    ).all()
-    
-    result = []
-    for member in members:
-        group = db.query(Group).filter(Group.id == member.group_id).first()
-        if group:
-            result.append(convert_group(group, current_user.id, db))
     
     return {"status": "success", "groups": result}
 

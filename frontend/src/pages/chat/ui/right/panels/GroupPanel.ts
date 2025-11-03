@@ -2,13 +2,11 @@ import { MessagePanel } from "./MessagePanel";
 import { API_BASE_URL } from "@/core/config";
 import { getAuthHeaders } from "@/core/api/authApi";
 import { 
-    getGroupMessages, sendGroupMessage, deleteGroupMessage, addGroupReaction,
-    type Group, type GroupMessage 
+    getGroupMessages, sendGroupMessage, deleteGroupMessage
 } from "@/core/api/groupsApi";
 import type { 
-    GroupNewWebSocketMessage, GroupMessageDeletedWebSocketMessage, 
+    Group, GroupMessage, GroupNewWebSocketMessage, GroupMessageDeletedWebSocketMessage, 
     GroupReactionUpdateWebSocketMessage, GroupUpdatedWebSocketMessage,
-    GroupMemberAddedWebSocketMessage, GroupMemberRemovedWebSocketMessage,
     Message, WebSocketMessage 
 } from "@/core/types";
 import type { UserState, ProfileDialogData } from "@/pages/chat/state";
@@ -53,10 +51,12 @@ export class GroupPanel extends MessagePanel {
             if (response.ok) {
                 const data = await response.json();
                 this.group = data.group;
-                this.updateState({
-                    title: this.group.name,
-                    profilePicture: this.group.profile_picture || undefined
-                });
+                if (this.group) {
+                    this.updateState({
+                        title: this.group.name,
+                        profilePicture: this.group.profile_picture || undefined
+                    });
+                }
             }
         } catch (error) {
             console.error("Error loading group info:", error);

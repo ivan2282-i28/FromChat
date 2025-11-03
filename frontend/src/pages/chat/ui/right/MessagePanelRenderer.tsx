@@ -38,7 +38,7 @@ function ChatHeaderText({ panel }: { panel: MessagePanel | null }) {
         const isTyping = chat.dmTypingUsers.get(recipientId);
 
         content = isTyping ? <TypingIndicator typingUsers={[]} /> : <OnlineStatus userId={recipientId} />;
-    } else if (!panel.isDm() && otherTypingUsers.length > 0) {
+    } else if (panel && !panel.isDm() && otherTypingUsers.length > 0) {
         // For groups and channels, show typing indicator
         content = <TypingIndicator typingUsers={otherTypingUsers} />;
     } else {
@@ -59,6 +59,7 @@ export function MessagePanelRenderer({ panel }: MessagePanelRendererProps) {
     const [editMessage, setEditMessage] = useState<Message | null>(null);
     const [editVisible, setEditVisible] = useState(Boolean(editMessage));
     const [pendingAction, setPendingAction] = useState<null | { type: "reply" | "edit"; message: Message }>(null);
+    const [settingsOpen, setSettingsOpen] = useState(false);
     const { initiateCall } = useCall();
 
 
@@ -260,6 +261,12 @@ export function MessagePanelRenderer({ panel }: MessagePanelRendererProps) {
                                 {panel?.isDm() && (
                                     <MaterialIconButton onClick={handleCallClick} icon="call--filled" />
                                 )}
+                                {!panel?.isDm() && (panel instanceof ChannelPanel || panel?.getId().startsWith("group-")) && (
+                                    <MaterialIconButton 
+                                        onClick={() => setSettingsOpen(true)} 
+                                        icon="settings--filled" 
+                                    />
+                                )}
                             </div>
                         </div>
 
@@ -441,6 +448,62 @@ export function MessagePanelRenderer({ panel }: MessagePanelRendererProps) {
 
             {/* Profile Dialog */}
             <ProfileDialog />
+
+            {/* Settings Dialog */}
+            {panel && settingsOpen && (
+                <GroupChannelSettingsDialog
+                    panel={panel}
+                    isOpen={settingsOpen}
+                    onOpenChange={setSettingsOpen}
+                />
+            )}
         </div>
     );
+}
+
+function GroupChannelSettingsDialog({
+    panel,
+    isOpen,
+    onOpenChange
+}: {
+    panel: MessagePanel;
+    isOpen: boolean;
+    onOpenChange: (open: boolean) => void;
+}) {
+    const [settingsComponent, setSettingsComponent] = useState<React.ReactNode>(null);
+
+    useEffect(() => {
+        if (isOpen && panel) {
+            (async () => {
+                const { StyledDialog } = await import("@/core/components/StyledDialog");
+                if (panel.getId().startsWith("group-")) {
+                    const groupPanel = panel as any; // GroupPanel type
+                    const groupId = groupPanel.getGroupId();
+                    const { GroupSettingsPanel } = await import("@/pages/chat/ui/settings/GroupSettingsPanel");
+                    setSettingsComponent(
+                        <StyledDialog open={isOpen} onOpenChange={onOpenChange}>
+                            <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                                <h2 style={{ margin: 0 }}>Group Settings</h2>
+                                <GroupSettingsPanel groupId={groupId} />
+                            </div>
+                        </StyledDialog>
+                    );
+                } else if (panel.getId().startsWith("channel-")) {
+                    const channelPanel = panel as any; // ChannelPanel type
+                    const channelId = channelPanel.getChannelId();
+                    const { ChannelSettingsPanel } = await import("@/pages/chat/ui/settings/ChannelSettingsPanel");
+                    setSettingsComponent(
+                        <StyledDialog open={isOpen} onOpenChange={onOpenChange}>
+                            <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                                <h2 style={{ margin: 0 }}>Channel Settings</h2>
+                                <ChannelSettingsPanel channelId={channelId} />
+                            </div>
+                        </StyledDialog>
+                    );
+                }
+            })();
+        }
+    }, [isOpen, panel, onOpenChange]);
+
+    return settingsComponent || null;
 }

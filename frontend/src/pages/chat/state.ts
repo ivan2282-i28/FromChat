@@ -467,10 +467,10 @@ export const useAppState = create<AppState>((set, get) => ({
         let groupPanel = chat.groupPanel;
         if (!groupPanel || groupPanel.getId() !== `group-${groupId}`) {
             groupPanel = new GroupPanel(groupId, user);
-        } else {
-            groupPanel.setAuthToken(user.authToken);
-            groupPanel.clearMessages();
-        }
+          } else {
+              groupPanel.setAuthToken(user.authToken);
+              groupPanel.clearMessagesPublic();
+          }
 
         // Activate panel
         await groupPanel.activate();
@@ -501,10 +501,10 @@ export const useAppState = create<AppState>((set, get) => ({
         let channelPanel = chat.channelPanel;
         if (!channelPanel || channelPanel.getId() !== `channel-${channelId}`) {
             channelPanel = new ChannelPanel(channelId, user);
-        } else {
-            channelPanel.setAuthToken(user.authToken);
-            channelPanel.clearMessages();
-        }
+          } else {
+              channelPanel.setAuthToken(user.authToken);
+              channelPanel.clearMessagesPublic();
+          }
 
         // Activate panel
         await channelPanel.activate();

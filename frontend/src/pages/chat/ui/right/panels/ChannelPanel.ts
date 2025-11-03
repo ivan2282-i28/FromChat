@@ -2,10 +2,10 @@ import { MessagePanel } from "./MessagePanel";
 import { API_BASE_URL } from "@/core/config";
 import { getAuthHeaders } from "@/core/api/authApi";
 import { 
-    getChannelMessages, sendChannelMessage, deleteChannelMessage, addChannelReaction,
-    subscribeToChannel, unsubscribeFromChannel,
-    type Channel, type ChannelMessage 
+    getChannelMessages, sendChannelMessage, deleteChannelMessage,
+    subscribeToChannel, unsubscribeFromChannel, getChannel
 } from "@/core/api/channelsApi";
+import type { Channel, ChannelMessage } from "@/core/types";
 import type { 
     ChannelNewWebSocketMessage, ChannelMessageDeletedWebSocketMessage, 
     ChannelReactionUpdateWebSocketMessage, ChannelUpdatedWebSocketMessage,
@@ -60,11 +60,13 @@ export class ChannelPanel extends MessagePanel {
             if (response.ok) {
                 const data = await response.json();
                 this.channel = data.channel;
-                this.canSendMessages = this.channel.is_admin || false;
-                this.updateState({
-                    title: this.channel.name,
-                    profilePicture: this.channel.profile_picture || undefined
-                });
+                if (this.channel) {
+                    this.canSendMessages = this.channel.is_admin || false;
+                    this.updateState({
+                        title: this.channel.name,
+                        profilePicture: this.channel.profile_picture || undefined
+                    });
+                }
             }
         } catch (error) {
             console.error("Error loading channel info:", error);
@@ -251,9 +253,23 @@ export class ChannelPanel extends MessagePanel {
         if (!this.currentUser.authToken) return;
         try {
             await subscribeToChannel(this.channelId, this.currentUser.authToken);
+            // Refresh channel data
+            const updatedChannel = await getChannel(this.channelId, this.currentUser.authToken);
+            this.channel = updatedChannel;
             if (this.channel) {
-                this.channel.is_subscribed = true;
-                this.channel.subscriber_count = (this.channel.subscriber_count || 0) + 1;
+                this.updateState({
+                    title: this.channel.name,
+                    profilePicture: this.channel.profile_picture || undefined
+                });
+                this.canSendMessages = this.channel.is_admin || false;
+            }
+            // Update subscribed channels in global state
+            const { useAppState } = await import("@/pages/chat/state");
+            const { getMyChannels } = await import("@/core/api/channelsApi");
+            const state = useAppState.getState();
+            if (state.user.authToken) {
+                const subscribedChannels = await getMyChannels(state.user.authToken);
+                state.setSubscribedChannels(subscribedChannels);
             }
             await this.loadMessages();
         } catch (error) {
@@ -294,61 +310,20 @@ export class ChannelPanel extends MessagePanel {
         };
     }
 
-    setAuthToken(authToken: string): void {
-        this.currentUser.authToken = authToken;
+    getChannelId(): number {
+        return this.channelId;
     }
 
-      getChannelId(): number {
-          return this.channelId;
-      }
-
-      getChannel(): Channel | null {
-          return this.channel;
-      }
-
-      isSubscribed(): boolean {
-          return this.channel?.is_subscribed ?? false;
-      }
-
-      canSend(): boolean {
-          return this.channel?.is_admin ?? false;
-      }
-
-      async subscribe(): Promise<void> {
-          if (!this.currentUser.authToken || !this.channel) return;
-          try {
-              const { subscribeChannel } = await import("@/core/api/channelsApi");
-              await subscribeChannel(this.channelId, this.currentUser.authToken);
-              // Refresh channel data
-              const { getChannel } = await import("@/core/api/channelsApi");
-              this.channel = await getChannel(this.channelId, this.currentUser.authToken);
-              // Update state
-              if (this.channel) {
-                  this.updateState({
-                      title: this.channel.name,
-                      profilePicture: this.channel.profile_picture || undefined
-                  });
-              }
-              // Update subscribed channels in global state
-              const { useAppState } = await import("@/pages/chat/state");
-              const { getMyChannels } = await import("@/core/api/channelsApi");
-              const state = useAppState.getState();
-              if (state.user.authToken) {
-                  const subscribedChannels = await getMyChannels(state.user.authToken);
-                  state.setSubscribedChannels(subscribedChannels);
-              }
-          } catch (error) {
-              console.error(`Failed to subscribe to channel ${this.channelId}:`, error);
-              throw error;
-          }
-      }
-
-    canSend(): boolean {
-        return this.canSendMessages;
+    getChannel(): Channel | null {
+        return this.channel;
     }
 
     isSubscribed(): boolean {
-        return this.channel?.is_subscribed || false;
+        return this.channel?.is_subscribed ?? false;
+    }
+
+    canSend(): boolean {
+        return this.canSendMessages;
     }
 }
 

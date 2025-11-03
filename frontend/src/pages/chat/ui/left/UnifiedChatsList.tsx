@@ -1,10 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAppState } from "@/pages/chat/state";
 import { useDM, type DMUser } from "@/pages/chat/hooks/useDM";
-import { getAuthHeaders } from "@/core/api/authApi";
 import { fetchUserPublicKey } from "@/core/api/dmApi";
 import { StatusBadge } from "@/core/components/StatusBadge";
-import type { Message, Group, Channel, GroupMessage, ChannelMessage } from "@/core/types";
+import type { Group, Channel, GroupMessage, ChannelMessage } from "@/core/types";
 import { websocket } from "@/core/websocket";
 import { onlineStatusManager } from "@/core/onlineStatusManager";
 import { OnlineIndicator } from "@/pages/chat/ui/right/OnlineIndicator";
