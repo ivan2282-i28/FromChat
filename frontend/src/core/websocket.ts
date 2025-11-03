@@ -130,6 +130,53 @@ websocket.addEventListener("message", (e) => {
             typingManager.handleDmTyping(response as any);
         } else if (response.type === "stopDmTyping") {
             typingManager.handleStopDmTyping(response as any);
+        } else if (
+            response.type === "groupNew" ||
+            response.type === "groupMessageDeleted" ||
+            response.type === "groupReactionUpdate" ||
+            response.type === "groupUpdated" ||
+            response.type === "groupMemberAdded" ||
+            response.type === "groupMemberRemoved" ||
+            response.type === "groupMemberRestricted" ||
+            response.type === "channelNew" ||
+            response.type === "channelMessageDeleted" ||
+            response.type === "channelReactionUpdate" ||
+            response.type === "channelUpdated" ||
+            response.type === "channelSubscribed" ||
+            response.type === "channelUnsubscribed"
+        ) {
+            // Group and channel messages are handled by the panel's globalMessageHandler
+            // But we also need to update state if groups/channels change
+            const state = useAppState.getState();
+            if (response.type === "groupMemberAdded" || response.type === "groupMemberRemoved") {
+                // Reload groups to get updated member counts (async, fire and forget)
+                (async () => {
+                    try {
+                        const { getMyGroups } = await import("@/core/api/groupsApi");
+                        const token = state.user.authToken;
+                        if (token) {
+                            const joinedGroups = await getMyGroups(token);
+                            state.setJoinedGroups(joinedGroups);
+                        }
+                    } catch (e) {
+                        // Ignore errors
+                    }
+                })();
+            } else if (response.type === "channelSubscribed" || response.type === "channelUnsubscribed") {
+                // Reload channels to get updated subscriber counts (async, fire and forget)
+                (async () => {
+                    try {
+                        const { getMyChannels } = await import("@/core/api/channelsApi");
+                        const token = state.user.authToken;
+                        if (token) {
+                            const subscribedChannels = await getMyChannels(token);
+                            state.setSubscribedChannels(subscribedChannels);
+                        }
+                    } catch (e) {
+                        // Ignore errors
+                    }
+                })();
+            }
         } else if (response.type === "suspended") {
             // Handle account suspension
             const { setSuspended } = useAppState.getState();

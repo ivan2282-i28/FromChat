@@ -298,13 +298,50 @@ export class ChannelPanel extends MessagePanel {
         this.currentUser.authToken = authToken;
     }
 
-    getChannelId(): number {
-        return this.channelId;
-    }
+      getChannelId(): number {
+          return this.channelId;
+      }
 
-    getChannel(): Channel | null {
-        return this.channel;
-    }
+      getChannel(): Channel | null {
+          return this.channel;
+      }
+
+      isSubscribed(): boolean {
+          return this.channel?.is_subscribed ?? false;
+      }
+
+      canSend(): boolean {
+          return this.channel?.is_admin ?? false;
+      }
+
+      async subscribe(): Promise<void> {
+          if (!this.currentUser.authToken || !this.channel) return;
+          try {
+              const { subscribeChannel } = await import("@/core/api/channelsApi");
+              await subscribeChannel(this.channelId, this.currentUser.authToken);
+              // Refresh channel data
+              const { getChannel } = await import("@/core/api/channelsApi");
+              this.channel = await getChannel(this.channelId, this.currentUser.authToken);
+              // Update state
+              if (this.channel) {
+                  this.updateState({
+                      title: this.channel.name,
+                      profilePicture: this.channel.profile_picture || undefined
+                  });
+              }
+              // Update subscribed channels in global state
+              const { useAppState } = await import("@/pages/chat/state");
+              const { getMyChannels } = await import("@/core/api/channelsApi");
+              const state = useAppState.getState();
+              if (state.user.authToken) {
+                  const subscribedChannels = await getMyChannels(state.user.authToken);
+                  state.setSubscribedChannels(subscribedChannels);
+              }
+          } catch (error) {
+              console.error(`Failed to subscribe to channel ${this.channelId}:`, error);
+              throw error;
+          }
+      }
 
     canSend(): boolean {
         return this.canSendMessages;

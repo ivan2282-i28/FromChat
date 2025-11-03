@@ -244,7 +244,7 @@ export const useAppState = create<AppState>((set, get) => ({
         isSuspended: false,
         suspensionReason: null
     },
-    setUser: (token: string, user: User) => {
+    setUser: async (token: string, user: User) => {
         set(() => ({
             user: {
                 currentUser: user,
@@ -276,6 +276,21 @@ export const useAppState = create<AppState>((set, get) => ({
                 data: {}
             })
         } catch {}
+
+        // Load joined groups and subscribed channels
+        try {
+            const { getMyGroups } = await import("@/core/api/groupsApi");
+            const { getMyChannels } = await import("@/core/api/channelsApi");
+            const { setJoinedGroups, setSubscribedChannels } = get();
+            
+            const joinedGroups = await getMyGroups(token);
+            setJoinedGroups(joinedGroups);
+            
+            const subscribedChannels = await getMyChannels(token);
+            setSubscribedChannels(subscribedChannels);
+        } catch (e) {
+            console.error("Failed to load groups/channels:", e);
+        }
     },
     logout: () => {
         // Clear localStorage
@@ -366,6 +381,21 @@ export const useAppState = create<AppState>((set, get) => ({
                         }
                     } catch (e) {
                         console.error("Notification setup failed (restored):", e);
+                    }
+
+                    // Load joined groups and subscribed channels
+                    try {
+                        const { getMyGroups } = await import("@/core/api/groupsApi");
+                        const { getMyChannels } = await import("@/core/api/channelsApi");
+                        const { setJoinedGroups, setSubscribedChannels } = get();
+                        
+                        const joinedGroups = await getMyGroups(token);
+                        setJoinedGroups(joinedGroups);
+                        
+                        const subscribedChannels = await getMyChannels(token);
+                        setSubscribedChannels(subscribedChannels);
+                    } catch (e) {
+                        console.error("Failed to load groups/channels:", e);
                     }
                 } else {
                     throw new Error("Unable to authenticate");

@@ -711,3 +711,22 @@ async def list_channels(
     
     return {"status": "success", "channels": result}
 
+
+@router.get("/channels/my")
+async def get_my_channels(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get channels the current user is subscribed to"""
+    subscribers = db.query(ChannelSubscriber).filter(
+        ChannelSubscriber.user_id == current_user.id
+    ).all()
+    
+    result = []
+    for subscriber in subscribers:
+        channel = db.query(Channel).filter(Channel.id == subscriber.channel_id).first()
+        if channel:
+            result.append(convert_channel(channel, current_user.id, db))
+    
+    return {"status": "success", "channels": result}
+

@@ -213,3 +213,12 @@ export async function listGroups(token: string): Promise<Group[]> {
     return data.groups || [];
 }
 
+export async function getMyGroups(token: string): Promise<Group[]> {
+    const res = await fetch(`${API_BASE_URL}/groups/my`, {
+        headers: getAuthHeaders(token, true)
+    });
+    if (!res.ok) throw new Error("Failed to get my groups");
+    const data = await res.json();
+    return data.groups || [];
+}
+

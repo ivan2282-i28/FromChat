@@ -12,8 +12,9 @@ export default function ChatPage() {
     const { navigate: navigateDownloadApp } = useDownloadAppScreen();
     const location = useLocation();
     const navigate = useNavigate();
-    const { user, setProfileDialog } = useAppState();
+    const { user, setProfileDialog, chat, switchToGroup } = useAppState();
     const processedProfile = useRef<string | null>(null);
+    const defaultGroupSwitched = useRef(false);
 
     // Handle profile links ONLY from navigation state (from SmartCatchAll)
     useEffect(() => {
@@ -65,6 +66,32 @@ export default function ChatPage() {
 
         handleProfileLink();
     }, [location.state, user.authToken, user.currentUser?.id, setProfileDialog, navigate, location.pathname]);
+
+    // Auto-switch to default group (general) on first load if user is logged in
+    useEffect(() => {
+        async function switchToDefaultGroup() {
+            if (!user.authToken || !user.currentUser || defaultGroupSwitched.current) return;
+            if (chat.activePanel) return; // Don't switch if already on a panel
+            
+            try {
+                // Find the default group (username: "general")
+                const { getGroupByUsername } = await import("@/core/api/groupsApi");
+                const defaultGroup = await getGroupByUsername("general", user.authToken);
+                
+                if (defaultGroup && defaultGroup.is_member) {
+                    defaultGroupSwitched.current = true;
+                    await switchToGroup(defaultGroup.id);
+                }
+            } catch (error) {
+                // Default group might not exist yet or user not a member, ignore
+                console.error("Failed to switch to default group:", error);
+            }
+        }
+        
+        if (chat.joinedGroups.length > 0 && !defaultGroupSwitched.current) {
+            switchToDefaultGroup();
+        }
+    }, [user.authToken, user.currentUser, chat.joinedGroups, chat.activePanel, switchToGroup]);
 
     if (navigateDownloadApp) return navigateDownloadApp;
 

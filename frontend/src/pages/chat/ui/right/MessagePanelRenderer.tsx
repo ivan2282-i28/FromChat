@@ -9,11 +9,12 @@ import { setGlobalMessageHandler } from "@/core/websocket";
 import type { Message, WebSocketMessage } from "@/core/types";
 import defaultAvatar from "@/images/default-avatar.png";
 import { DMPanel } from "./panels/DMPanel";
+import { ChannelPanel } from "./panels/ChannelPanel";
 import useCall from "@/pages/chat/hooks/useCall";
 import { TypingIndicator } from "./TypingIndicator";
 import { OnlineStatus } from "./OnlineStatus";
 import { typingManager } from "@/core/typingManager";
-import { MaterialIcon, MaterialIconButton } from "@/utils/material";
+import { MaterialIcon, MaterialIconButton, MaterialButton } from "@/utils/material";
 import styles from "@/pages/chat/css/layout.module.scss";
 import rightPanelStyles from "@/pages/chat/css/right-panel.module.scss";
 
@@ -315,7 +316,47 @@ export function MessagePanelRenderer({ panel }: MessagePanelRendererProps) {
                         )}
 
                         {panel && (
-                            <ChatInputWrapper
+                            (panel instanceof ChannelPanel && !panel.isSubscribed()) ? (
+                                <div style={{
+                                    padding: "1rem",
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    alignItems: "center",
+                                    gap: "0.5rem",
+                                    color: "var(--mdui-color-on-surface-variant)"
+                                }}>
+                                    <p style={{ margin: 0, textAlign: "center" }}>
+                                        {panel.getChannel()?.subscriber_count || 0} подписчиков
+                                    </p>
+                                    <MaterialButton
+                                        variant="filled"
+                                        onClick={async () => {
+                                            try {
+                                                await panel.subscribe();
+                                                // Reload messages after subscribing
+                                                await panel.loadMessages();
+                                            } catch (error) {
+                                                console.error("Failed to subscribe:", error);
+                                            }
+                                        }}
+                                    >
+                                        Подписаться
+                                    </MaterialButton>
+                                </div>
+                            ) : (panel instanceof ChannelPanel && !panel.canSend()) ? (
+                                <div style={{
+                                    padding: "1rem",
+                                    display: "flex",
+                                    justifyContent: "center",
+                                    alignItems: "center",
+                                    color: "var(--mdui-color-on-surface-variant)"
+                                }}>
+                                    <p style={{ margin: 0, textAlign: "center" }}>
+                                        Только администраторы могут отправлять сообщения в каналы
+                                    </p>
+                                </div>
+                            ) : (
+                                <ChatInputWrapper
                                     onSendMessage={(text, files) => {
                                         panel.handleSendMessage(text, replyTo?.id, files);
                                         setReplyTo(null);
@@ -371,6 +412,7 @@ export function MessagePanelRenderer({ panel }: MessagePanelRendererProps) {
                                         }
                                     }}
                                 />
+                            )
                         )}
                     </div>
 

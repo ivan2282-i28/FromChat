@@ -176,3 +176,12 @@ export async function listChannels(token: string): Promise<Channel[]> {
     return data.channels || [];
 }
 
+export async function getMyChannels(token: string): Promise<Channel[]> {
+    const res = await fetch(`${API_BASE_URL}/channels/my`, {
+        headers: getAuthHeaders(token, true)
+    });
+    if (!res.ok) throw new Error("Failed to get my channels");
+    const data = await res.json();
+    return data.channels || [];
+}
+

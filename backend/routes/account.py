@@ -9,7 +9,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from constants import OWNER_USERNAME
 from dependencies import get_current_user, get_db
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from models import LoginRequest, RegisterRequest, ChangePasswordRequest, User, CryptoPublicKey, CryptoBackup, DeviceSession
+from models import LoginRequest, RegisterRequest, ChangePasswordRequest, User, CryptoPublicKey, CryptoBackup, DeviceSession, Group, GroupMember
 from utils import create_token, get_password_hash, verify_password
 from validation import is_valid_password, is_valid_username, is_valid_display_name
 import os
@@ -163,6 +163,23 @@ def register(request: RegisterRequest, db: Session = Depends(get_db), http: Requ
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
+
+    # Add new user to default group (general) if it exists
+    default_group = db.query(Group).filter(Group.username == "general").first()
+    if default_group:
+        # Check if user is already a member (shouldn't be, but check anyway)
+        existing_member = db.query(GroupMember).filter(
+            GroupMember.group_id == default_group.id,
+            GroupMember.user_id == new_user.id
+        ).first()
+        if not existing_member:
+            member = GroupMember(
+                group_id=default_group.id,
+                user_id=new_user.id,
+                role="member"
+            )
+            db.add(member)
+            db.commit()
 
     # Create initial device session
     raw_ua = http.headers.get("user-agent") if http else None
