@@ -634,6 +634,228 @@ export interface StopDmTypingRequest extends WebSocketMessage {
 
 
 // -------------
+// Groups and Channels types
+// -------------
+
+export interface Group {
+    id: number;
+    name: string;
+    username: string | null;
+    owner_id: number;
+    access_type: "public" | "private";
+    invite_link: string | null;
+    description: string | null;
+    profile_picture: string | null;
+    created_at: string;
+    member_count: number;
+    is_member: boolean;
+    is_admin: boolean;
+}
+
+export interface Channel {
+    id: number;
+    name: string;
+    username: string | null;
+    owner_id: number;
+    access_type: "public" | "private";
+    invite_link: string | null;
+    description: string | null;
+    profile_picture: string | null;
+    subscriber_count: number;
+    created_at: string;
+    is_subscribed: boolean;
+    is_admin: boolean;
+}
+
+export interface GroupMessage {
+    id: number;
+    user_id: number;
+    username: string;
+    content: string;
+    is_edited: boolean;
+    timestamp: string;
+    profile_picture?: string;
+    verified?: boolean;
+    reply_to?: GroupMessage | null;
+    reactions?: Reaction[];
+    files?: Attachment[];
+}
+
+export interface ChannelMessage {
+    id: number;
+    user_id: number;
+    username: string;
+    content: string;
+    is_edited: boolean;
+    timestamp: string;
+    profile_picture?: string;
+    verified?: boolean;
+    reply_to?: ChannelMessage | null;
+    reactions?: Reaction[]; // Anonymous - no user info
+    files?: Attachment[];
+}
+
+export interface GroupMember {
+    user: User;
+    role: "owner" | "admin" | "member";
+    joined_at: string;
+    is_banned: boolean;
+    admin?: GroupAdmin | null;
+}
+
+export interface ChannelSubscriber {
+    user: User;
+    subscribed_at: string;
+}
+
+export interface GroupAdmin {
+    admin_name: string | null;
+    can_send_messages: boolean;
+    can_send_images: boolean;
+    can_send_files: boolean;
+    can_delete_messages: boolean;
+    can_assign_admins: boolean;
+    can_modify_profile: boolean;
+}
+
+export interface ChannelAdmin {
+    admin_name: string | null;
+    can_send_messages: boolean;
+    can_send_images: boolean;
+    can_send_files: boolean;
+    can_delete_messages: boolean;
+    can_assign_admins: boolean;
+    can_modify_profile: boolean;
+}
+
+export interface MemberRestriction {
+    can_send_messages: boolean;
+    can_send_images: boolean;
+    can_send_files: boolean;
+    can_react: boolean;
+    expires_at: string | null;
+}
+
+// WebSocket message types for groups and channels
+export interface GroupNewWebSocketMessage extends WebSocketMessage {
+    type: "groupNew";
+    data: {
+        group_id: number;
+        message: GroupMessage;
+    };
+}
+
+export interface ChannelNewWebSocketMessage extends WebSocketMessage {
+    type: "channelNew";
+    data: {
+        channel_id: number;
+        message: ChannelMessage;
+    };
+}
+
+export interface GroupMessageDeletedWebSocketMessage extends WebSocketMessage {
+    type: "groupMessageDeleted";
+    data: {
+        group_id: number;
+        message_id: number;
+    };
+}
+
+export interface ChannelMessageDeletedWebSocketMessage extends WebSocketMessage {
+    type: "channelMessageDeleted";
+    data: {
+        channel_id: number;
+        message_id: number;
+    };
+}
+
+export interface GroupUpdatedWebSocketMessage extends WebSocketMessage {
+    type: "groupUpdated";
+    data: {
+        group_id: number;
+        group: Group;
+    };
+}
+
+export interface ChannelUpdatedWebSocketMessage extends WebSocketMessage {
+    type: "channelUpdated";
+    data: {
+        channel_id: number;
+        channel: Channel;
+    };
+}
+
+export interface GroupMemberAddedWebSocketMessage extends WebSocketMessage {
+    type: "groupMemberAdded";
+    data: {
+        group_id: number;
+        user_id: number;
+        username: string;
+    };
+}
+
+export interface GroupMemberRemovedWebSocketMessage extends WebSocketMessage {
+    type: "groupMemberRemoved";
+    data: {
+        group_id: number;
+        user_id: number;
+        username: string;
+    };
+}
+
+export interface GroupMemberRestrictedWebSocketMessage extends WebSocketMessage {
+    type: "groupMemberRestricted";
+    data: {
+        group_id: number;
+        user_id: number;
+        expires_at: string | null;
+    };
+}
+
+export interface ChannelSubscribedWebSocketMessage extends WebSocketMessage {
+    type: "channelSubscribed";
+    data: {
+        channel_id: number;
+        user_id: number;
+        username: string;
+        subscriber_count: number;
+    };
+}
+
+export interface ChannelUnsubscribedWebSocketMessage extends WebSocketMessage {
+    type: "channelUnsubscribed";
+    data: {
+        channel_id: number;
+        user_id: number;
+        username: string;
+        subscriber_count: number;
+    };
+}
+
+export interface GroupReactionUpdateWebSocketMessage extends WebSocketMessage {
+    type: "groupReactionUpdate";
+    data: {
+        group_id: number;
+        message_id: number;
+        emoji: string;
+        action: "added" | "removed";
+        user_id: number;
+        reactions: Reaction[];
+    };
+}
+
+export interface ChannelReactionUpdateWebSocketMessage extends WebSocketMessage {
+    type: "channelReactionUpdate";
+    data: {
+        channel_id: number;
+        message_id: number;
+        emoji: string;
+        action: "added" | "removed";
+        reactions: Reaction[];
+    };
+}
+
+// -------------
 // Utility types
 // -------------
 

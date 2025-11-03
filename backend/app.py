@@ -5,9 +5,9 @@ import subprocess
 import sys
 import os
 from constants import DATABASE_URL
-from routes import account, messaging, profile, push, webrtc, devices
+from routes import account, messaging, profile, push, webrtc, devices, groups, channels
 import logging
-from models import User
+from models import User, Group, GroupMember, GroupMessage, Message, generate_invite_link
 from constants import OWNER_USERNAME
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -47,9 +47,61 @@ async def lifespan(app: FastAPI):
                 logger.info(f"Owner user '{OWNER_USERNAME}' is already verified")
             else:
                 logger.warning(f"Owner user '{OWNER_USERNAME}' not found")
+            
+            # Auto-create default group if it doesn't exist
+            from sqlalchemy import or_
+            default_group = db.query(Group).filter(or_(Group.username == "general", Group.name == "Общий чат")).first()
+            if not default_group:
+                logger.info("Creating default group 'Общий чат'...")
+                # Get first user as owner, or owner user
+                group_owner = owner if owner else db.query(User).first()
+                if group_owner:
+                    default_group = Group(
+                        name="Общий чат",
+                        username="general",
+                        owner_id=group_owner.id,
+                        access_type="public"
+                    )
+                    db.add(default_group)
+                    db.commit()
+                    db.refresh(default_group)
+                    logger.info(f"Default group created with ID {default_group.id}")
+                    
+                    # Add all existing users as members
+                    all_users = db.query(User).all()
+                    for user in all_users:
+                        member = GroupMember(
+                            group_id=default_group.id,
+                            user_id=user.id,
+                            role="owner" if user.id == group_owner.id else "member"
+                        )
+                        db.add(member)
+                    db.commit()
+                    logger.info(f"Added {len(all_users)} users as members of default group")
+                    
+                    # Migrate existing messages to group messages
+                    existing_messages = db.query(Message).all()
+                    if existing_messages:
+                        logger.info(f"Migrating {len(existing_messages)} existing messages to group messages...")
+                        for msg in existing_messages:
+                            group_msg = GroupMessage(
+                                group_id=default_group.id,
+                                user_id=msg.user_id,
+                                content=msg.content,
+                                timestamp=msg.timestamp,
+                                reply_to_id=None,  # Can't migrate reply_to easily
+                                is_edited=msg.is_edited
+                            )
+                            db.add(group_msg)
+                        db.commit()
+                        logger.info(f"Migrated {len(existing_messages)} messages to group messages")
+                else:
+                    logger.warning("No users found, cannot create default group")
+            else:
+                logger.info(f"Default group already exists (ID: {default_group.id})")
                 
     except Exception as e:
-        logger.error(f"Failed to ensure owner verification: {e}")
+        logger.error(f"Failed to ensure owner verification or create default group: {e}")
     
     # Start the messaging cleanup task
     try:
@@ -90,3 +142,5 @@ app.include_router(profile.router)
 app.include_router(push.router, prefix="/push")
 app.include_router(webrtc.router, prefix="/webrtc")
 app.include_router(devices.router, prefix="/devices")
+app.include_router(groups.router, prefix="/api")
+app.include_router(channels.router, prefix="/api")

@@ -4,7 +4,7 @@ import os
 from typing import List, Optional
 from sqlalchemy.orm import Session
 from pywebpush import webpush, WebPushException
-from models import PushSubscription, User, Message, DMEnvelope
+from models import PushSubscription, User, Message, DMEnvelope, Group, Channel, GroupMessage, ChannelMessage
 
 logger = logging.getLogger("uvicorn.error")
 
@@ -135,6 +135,69 @@ class PushNotificationService:
                 db.commit()
         except Exception as e:
             logger.error(f"Failed to send push notification to user {user_id}: {e}")
+
+    async def send_group_message_notification(self, db: Session, message: GroupMessage, group: Group, exclude_user_id: Optional[int] = None):
+        """Send push notification for a new group message"""
+        try:
+            from models import GroupMember
+            # Get all group members except the sender
+            members = db.query(GroupMember).filter(
+                GroupMember.group_id == group.id,
+                GroupMember.user_id != message.user_id,
+                GroupMember.is_banned == False
+            )
+            if exclude_user_id:
+                members = members.filter(GroupMember.user_id != exclude_user_id)
+            
+            for member in members.all():
+                user = db.query(User).filter(User.id == member.user_id).first()
+                if user:
+                    await self._send_notification_to_user(
+                        db, member.user_id,
+                        f"New message in {group.name}",
+                        message.content[:100] + ("..." if len(message.content) > 100 else ""),
+                        message.author.profile_picture,
+                        {
+                            "type": "group_message",
+                            "group_id": group.id,
+                            "message_id": message.id,
+                            "sender_id": message.user_id,
+                            "sender_username": message.author.username
+                        }
+                    )
+        except Exception as e:
+            logger.error(f"Failed to send group message notifications: {e}")
+
+    async def send_channel_message_notification(self, db: Session, message: ChannelMessage, channel: Channel, exclude_user_id: Optional[int] = None):
+        """Send push notification for a new channel message"""
+        try:
+            from models import ChannelSubscriber
+            # Get all subscribers except the sender
+            subscribers = db.query(ChannelSubscriber).filter(
+                ChannelSubscriber.channel_id == channel.id,
+                ChannelSubscriber.user_id != message.user_id
+            )
+            if exclude_user_id:
+                subscribers = subscribers.filter(ChannelSubscriber.user_id != exclude_user_id)
+            
+            for subscriber in subscribers.all():
+                user = db.query(User).filter(User.id == subscriber.user_id).first()
+                if user:
+                    await self._send_notification_to_user(
+                        db, subscriber.user_id,
+                        f"New message in {channel.name}",
+                        message.content[:100] + ("..." if len(message.content) > 100 else ""),
+                        message.author.profile_picture,
+                        {
+                            "type": "channel_message",
+                            "channel_id": channel.id,
+                            "message_id": message.id,
+                            "sender_id": message.user_id,
+                            "sender_username": message.author.username
+                        }
+                    )
+        except Exception as e:
+            logger.error(f"Failed to send channel message notifications: {e}")
 
     async def unsubscribe_user(self, db: Session, user_id: int) -> bool:
         """Unsubscribe a user from push notifications"""

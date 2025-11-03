@@ -1,8 +1,7 @@
 import { create } from "zustand";
-import type { Message, User } from "@/core/types";
+import type { Message, User, Group, Channel } from "@/core/types";
 import { request } from "@/core/websocket";
 import { MessagePanel } from "./ui/right/panels/MessagePanel";
-import { PublicChatPanel } from "./ui/right/panels/PublicChatPanel";
 import { DMPanel, type DMPanelData } from "./ui/right/panels/DMPanel";
 import { getAuthHeaders } from "@/core/api/authApi";
 import { restoreKeys } from "@/core/api/authApi";
@@ -63,9 +62,12 @@ interface ChatState {
     isSwitching: boolean;
     setIsSwitching: (value: boolean) => void;
     activePanel: MessagePanel | null;
-    publicChatPanel: PublicChatPanel | null;
     dmPanel: DMPanel | null;
+    groupPanel: MessagePanel | null; // GroupPanel will extend MessagePanel
+    channelPanel: MessagePanel | null; // ChannelPanel will extend MessagePanel
     pendingPanel?: MessagePanel | null;
+    joinedGroups: Group[];
+    subscribedChannels: Channel[];
     call: CallState;
     profileDialog: ProfileDialogData | null;
     onlineStatuses: Map<number, {online: boolean, lastSeen: string}>;
@@ -94,8 +96,11 @@ interface AppState {
     setActivePanel: (panel: MessagePanel | null) => void;
     setPendingPanel: (panel: MessagePanel | null) => void;
     applyPendingPanel: () => void;
-    switchToPublicChat: (chatName: string) => Promise<void>;
+    switchToGroup: (groupId: number) => Promise<void>;
+    switchToChannel: (channelId: number) => Promise<void>;
     switchToDM: (dmData: DMPanelData) => Promise<void>;
+    setJoinedGroups: (groups: Group[]) => void;
+    setSubscribedChannels: (channels: Channel[]) => void;
 
     // Call state
     startCall: (userId: number, username: string) => void;
@@ -146,9 +151,12 @@ export const useAppState = create<AppState>((set, get) => ({
             }
         })),
         activePanel: null,
-        publicChatPanel: null,
         dmPanel: null,
+        groupPanel: null,
+        channelPanel: null,
         pendingPanel: null,
+        joinedGroups: [],
+        subscribedChannels: [],
         profileDialog: null,
         call: {
             isActive: false,
@@ -399,25 +407,22 @@ export const useAppState = create<AppState>((set, get) => ({
         if (state.chat.activePanel) {
             state.chat.activePanel.deactivate();
         }
+        const pendingPanel = state.chat.pendingPanel;
         return set((state) => ({
             chat: {
                 ...state.chat,
-                activePanel: state.chat.pendingPanel || state.chat.activePanel,
-                // when switching to public chat, keep reference if type matches
-                publicChatPanel: (state.chat.pendingPanel instanceof PublicChatPanel)
-                    ? (state.chat.pendingPanel as PublicChatPanel)
-                    : state.chat.publicChatPanel,
-                dmPanel: (state.chat.pendingPanel instanceof DMPanel)
-                    ? (state.chat.pendingPanel as DMPanel)
-                    : state.chat.dmPanel,
+                activePanel: pendingPanel || state.chat.activePanel,
+                dmPanel: (pendingPanel instanceof DMPanel) ? (pendingPanel as DMPanel) : state.chat.dmPanel,
+                groupPanel: pendingPanel && pendingPanel.getId().startsWith("group-") ? pendingPanel : state.chat.groupPanel,
+                channelPanel: pendingPanel && pendingPanel.getId().startsWith("channel-") ? pendingPanel : state.chat.channelPanel,
                 // update currentChat from panel title if available
-                currentChat: state.chat.pendingPanel ? state.chat.pendingPanel.getState().title || state.chat.currentChat : state.chat.currentChat,
+                currentChat: pendingPanel ? pendingPanel.getState().title || state.chat.currentChat : state.chat.currentChat,
                 pendingPanel: null
             }
         }));
     },
 
-    switchToPublicChat: async (chatName: string) => {
+    switchToGroup: async (groupId: number) => {
         const { user, chat } = get();
 
         if (!user.authToken) return;
@@ -425,32 +430,79 @@ export const useAppState = create<AppState>((set, get) => ({
         // Start chat switching animation
         chat.setIsSwitching(true);
 
-        // Create or get public chat panel
-        let publicChatPanel = chat.publicChatPanel;
-        if (!publicChatPanel) {
-            publicChatPanel = new PublicChatPanel(chatName, user);
+        // Import GroupPanel dynamically to avoid circular dependencies
+        const { GroupPanel } = await import("./ui/right/panels/GroupPanel");
+
+        // Create or get group panel
+        let groupPanel = chat.groupPanel;
+        if (!groupPanel || groupPanel.getId() !== `group-${groupId}`) {
+            groupPanel = new GroupPanel(groupId, user);
         } else {
-            publicChatPanel.setChatName(chatName);
-            publicChatPanel.setAuthToken(user.authToken);
-            // Reset messages for the new chat
-            publicChatPanel.clearMessages();
+            groupPanel.setAuthToken(user.authToken);
+            groupPanel.clearMessages();
         }
 
         // Activate panel
-        await publicChatPanel.activate();
+        await groupPanel.activate();
 
         // Defer panel swap until animation switch-out completes
         set((state) => ({
             chat: {
                 ...state.chat,
-                pendingPanel: publicChatPanel,
+                pendingPanel: groupPanel,
+                groupPanel: groupPanel,
                 activeTab: "chats"
             }
         }));
-
-        // Let MessagePanelRenderer handle the animation timing completely
-        // It will set isChatSwitching to false when the fadeInDown animation completes
     },
+
+    switchToChannel: async (channelId: number) => {
+        const { user, chat } = get();
+
+        if (!user.authToken) return;
+
+        // Start chat switching animation
+        chat.setIsSwitching(true);
+
+        // Import ChannelPanel dynamically to avoid circular dependencies
+        const { ChannelPanel } = await import("./ui/right/panels/ChannelPanel");
+
+        // Create or get channel panel
+        let channelPanel = chat.channelPanel;
+        if (!channelPanel || channelPanel.getId() !== `channel-${channelId}`) {
+            channelPanel = new ChannelPanel(channelId, user);
+        } else {
+            channelPanel.setAuthToken(user.authToken);
+            channelPanel.clearMessages();
+        }
+
+        // Activate panel
+        await channelPanel.activate();
+
+        // Defer panel swap until animation switch-out completes
+        set((state) => ({
+            chat: {
+                ...state.chat,
+                pendingPanel: channelPanel,
+                channelPanel: channelPanel,
+                activeTab: "chats"
+            }
+        }));
+    },
+
+    setJoinedGroups: (groups: Group[]) => set((state) => ({
+        chat: {
+            ...state.chat,
+            joinedGroups: groups
+        }
+    })),
+
+    setSubscribedChannels: (channels: Channel[]) => set((state) => ({
+        chat: {
+            ...state.chat,
+            subscribedChannels: channels
+        }
+    })),
 
     switchToDM: async (dmData: DMPanelData) => {
         const { user, chat } = get();

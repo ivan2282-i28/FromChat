@@ -1,11 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAppState } from "@/pages/chat/state";
 import { useDM, type DMUser } from "@/pages/chat/hooks/useDM";
-import { API_BASE_URL } from "@/core/config";
 import { getAuthHeaders } from "@/core/api/authApi";
 import { fetchUserPublicKey } from "@/core/api/dmApi";
 import { StatusBadge } from "@/core/components/StatusBadge";
-import type { Message } from "@/core/types";
+import type { Message, Group, Channel, GroupMessage, ChannelMessage } from "@/core/types";
 import { websocket } from "@/core/websocket";
 import { onlineStatusManager } from "@/core/onlineStatusManager";
 import { OnlineIndicator } from "@/pages/chat/ui/right/OnlineIndicator";
@@ -13,11 +12,22 @@ import defaultAvatar from "@/images/default-avatar.png";
 import { MaterialBadge, MaterialCircularProgress, MaterialList, MaterialListItem } from "@/utils/material";
 import styles from "@/pages/chat/css/left-panel.module.scss";
 
-interface PublicChat {
-    id: string;
+interface GroupChat {
+    id: number;
     name: string;
-    type: "public";
-    lastMessage?: Message;
+    type: "group";
+    lastMessage?: GroupMessage;
+    profile_picture?: string;
+    member_count: number;
+}
+
+interface ChannelChat {
+    id: number;
+    name: string;
+    type: "channel";
+    lastMessage?: ChannelMessage;
+    profile_picture?: string;
+    subscriber_count: number;
 }
 
 interface DMConversation {
@@ -34,43 +44,56 @@ interface DMConversation {
     verified?: boolean;
 }
 
-type ChatItem = PublicChat | DMConversation;
+type ChatItem = GroupChat | ChannelChat | DMConversation;
 
 export function UnifiedChatsList() {
-    const { user, switchToPublicChat, switchToDM, chat } = useAppState();
+    const { user, switchToGroup, switchToChannel, switchToDM, chat } = useAppState();
     const { dmUsers, isLoadingUsers, loadUsers } = useDM();
 
-    const [publicChats] = useState<PublicChat[]>([
-        { id: "general", name: "Общий чат", type: "public" },
-        { id: "general2", name: "Общий чат 2", type: "public" }
-    ]);
-    const [lastMessages, setLastMessages] = useState<Record<string, Message | undefined>>({});
+    const [groupLastMessages, setGroupLastMessages] = useState<Record<number, GroupMessage | undefined>>({});
+    const [channelLastMessages, setChannelLastMessages] = useState<Record<number, ChannelMessage | undefined>>({});
     const [allChats, setAllChats] = useState<ChatItem[]>([]);
 
-    // Load public chat last messages
+    // Load last messages for groups and channels
     const loadLastMessages = useCallback(async () => {
         if (!user.authToken) return;
 
         try {
-            const response = await fetch(`${API_BASE_URL}/get_messages`, {
-                headers: getAuthHeaders(user.authToken)
-            });
+            // Load last messages for all joined groups
+            for (const group of chat.joinedGroups) {
+                try {
+                    const { getGroupMessages } = await import("@/core/api/groupsApi");
+                    const messages = await getGroupMessages(group.id, user.authToken);
+                    if (messages.length > 0) {
+                        setGroupLastMessages(prev => ({
+                            ...prev,
+                            [group.id]: messages[messages.length - 1]
+                        }));
+                    }
+                } catch (error) {
+                    console.error(`Error loading messages for group ${group.id}:`, error);
+                }
+            }
 
-            if (response.ok) {
-                const data = await response.json();
-                if (data.messages && data.messages.length > 0) {
-                    const lastMessage = data.messages[data.messages.length - 1];
-
-                    setLastMessages({
-                        general: lastMessage,
-                        general2: lastMessage
-                    });
+            // Load last messages for all subscribed channels
+            for (const channel of chat.subscribedChannels) {
+                try {
+                    const { getChannelMessages } = await import("@/core/api/channelsApi");
+                    const messages = await getChannelMessages(channel.id, user.authToken);
+                    if (messages.length > 0) {
+                        setChannelLastMessages(prev => ({
+                            ...prev,
+                            [channel.id]: messages[messages.length - 1]
+                        }));
+                    }
+                } catch (error) {
+                    console.error(`Error loading messages for channel ${channel.id}:`, error);
                 }
             }
         } catch (error) {
             console.error("Error loading last messages:", error);
         }
-    }, [user.authToken]);
+    }, [user.authToken, chat.joinedGroups, chat.subscribedChannels]);
 
     // Load DM users when chats tab is active
     useEffect(() => {
@@ -80,16 +103,29 @@ export function UnifiedChatsList() {
         }
     }, [chat.activeTab, loadUsers, loadLastMessages]);
 
-    // Combine public chats and DMs into one list
+    // Combine groups, channels, and DMs into one list
     useEffect(() => {
-        const publicChatItems: ChatItem[] = publicChats.map(chat => ({
-            ...chat,
-            lastMessage: lastMessages[chat.id]
+        const groupItems: ChatItem[] = chat.joinedGroups.map((group: Group) => ({
+            id: group.id,
+            name: group.name,
+            type: "group" as const,
+            lastMessage: groupLastMessages[group.id],
+            profile_picture: group.profile_picture || undefined,
+            member_count: group.member_count
+        }));
+
+        const channelItems: ChatItem[] = chat.subscribedChannels.map((channel: Channel) => ({
+            id: channel.id,
+            name: channel.name,
+            type: "channel" as const,
+            lastMessage: channelLastMessages[channel.id],
+            profile_picture: channel.profile_picture || undefined,
+            subscriber_count: channel.subscriber_count
         }));
 
         const dmChatItems: ChatItem[] = dmUsers.map((user: DMUser) => ({
             id: user.id,
-            userId: user.id, // Add userId field
+            userId: user.id,
             username: user.username,
             display_name: user.display_name,
             profile_picture: user.profile_picture,
@@ -100,12 +136,12 @@ export function UnifiedChatsList() {
             publicKey: user.publicKey
         }));
 
-        // Combine and sort by last message timestamp (DMs first, then public chats)
-        const combined = [...dmChatItems, ...publicChatItems];
+        // Combine and sort by last message timestamp
+        const combined = [...dmChatItems, ...groupItems, ...channelItems];
         setAllChats(combined);
-    }, [publicChats, lastMessages, dmUsers]);
+    }, [chat.joinedGroups, chat.subscribedChannels, groupLastMessages, channelLastMessages, dmUsers]);
 
-    // WebSocket listener for public chat message updates
+    // WebSocket listener for group and channel message updates
     useEffect(() => {
         if (!websocket) return;
 
@@ -113,45 +149,38 @@ export function UnifiedChatsList() {
             try {
                 const msg = JSON.parse(e.data);
 
-                if (msg.type === "newMessage") {
-                    const newMessage = msg.data as Message;
-                    // Update all public chats with the new message
-                    setLastMessages(prev => {
-                        const updated = { ...prev };
-                        publicChats.forEach(chat => {
-                            updated[chat.id] = newMessage;
-                        });
-                        return updated;
-                    });
-                } else if (msg.type === "messageEdited") {
-                    const editedMessage = msg.data as Message;
-                    // Update only if the edited message is the current last message
-                    setLastMessages(prev => {
-                        const updated = { ...prev };
-                        publicChats.forEach(chat => {
-                            if (updated[chat.id]?.id === editedMessage.id) {
-                                updated[chat.id] = editedMessage;
+                if (msg.type === "groupNew") {
+                    const groupMsg = msg.data as { group_id: number; message: GroupMessage };
+                    if (chat.joinedGroups.some(g => g.id === groupMsg.group_id)) {
+                        setGroupLastMessages(prev => ({
+                            ...prev,
+                            [groupMsg.group_id]: groupMsg.message
+                        }));
+                    }
+                } else if (msg.type === "channelNew") {
+                    const channelMsg = msg.data as { channel_id: number; message: ChannelMessage };
+                    if (chat.subscribedChannels.some(c => c.id === channelMsg.channel_id)) {
+                        setChannelLastMessages(prev => ({
+                            ...prev,
+                            [channelMsg.channel_id]: channelMsg.message
+                        }));
+                    }
+                } else if (msg.type === "groupMessageDeleted" || msg.type === "channelMessageDeleted") {
+                    const deletedData = msg.data as { group_id?: number; channel_id?: number; message_id: number };
+                    if (deletedData.group_id) {
+                        setGroupLastMessages(prev => {
+                            if (prev[deletedData.group_id!]?.id === deletedData.message_id) {
+                                loadLastMessages();
                             }
+                            return prev;
                         });
-                        return updated;
-                    });
-                } else if (msg.type === "messageDeleted") {
-                    const deletedMessageId = msg.data?.message_id;
-                    let needsReload = false;
-
-                    setLastMessages(prev => {
-                        const updated = { ...prev };
-                        publicChats.forEach(chat => {
-                            if (updated[chat.id]?.id === deletedMessageId) {
-                                updated[chat.id] = undefined;
-                                needsReload = true;
+                    } else if (deletedData.channel_id) {
+                        setChannelLastMessages(prev => {
+                            if (prev[deletedData.channel_id!]?.id === deletedData.message_id) {
+                                loadLastMessages();
                             }
+                            return prev;
                         });
-                        return updated;
-                    });
-
-                    if (needsReload) {
-                        loadLastMessages();
                     }
                 }
             } catch (error) {
@@ -161,7 +190,7 @@ export function UnifiedChatsList() {
 
         websocket.addEventListener("message", handleWebSocketMessage);
         return () => websocket.removeEventListener("message", handleWebSocketMessage);
-    }, [publicChats, loadLastMessages]);
+    }, [chat.joinedGroups, chat.subscribedChannels, loadLastMessages]);
 
     // Subscribe to online status for all DM users
     useEffect(() => {
@@ -180,8 +209,8 @@ export function UnifiedChatsList() {
         };
     }, [allChats]);
 
-    function formatPublicChatMessage(chatId: string): string {
-        const lastMessage = lastMessages[chatId];
+    function formatGroupMessage(groupId: number): string {
+        const lastMessage = groupLastMessages[groupId];
         if (!lastMessage) {
             return "";
         }
@@ -197,8 +226,29 @@ export function UnifiedChatsList() {
         return prefix + content;
     }
 
-    async function handlePublicChatClick(chatName: string) {
-        await switchToPublicChat(chatName);
+    function formatChannelMessage(channelId: number): string {
+        const lastMessage = channelLastMessages[channelId];
+        if (!lastMessage) {
+            return "";
+        }
+
+        const isCurrentUser = lastMessage.user_id === user.currentUser?.id;
+        const prefix = isCurrentUser ? "Вы: " : `${lastMessage.username}: `;
+
+        const maxContentLength = 50 - prefix.length;
+        const content = lastMessage.content.length > maxContentLength
+            ? lastMessage.content.substring(0, maxContentLength) + "..."
+            : lastMessage.content;
+
+        return prefix + content;
+    }
+
+    async function handleGroupClick(groupId: number) {
+        await switchToGroup(groupId);
+    }
+
+    async function handleChannelClick(channelId: number) {
+        await switchToChannel(channelId);
     }
 
     async function handleDMClick(dmConversation: DMConversation) {
@@ -230,23 +280,23 @@ export function UnifiedChatsList() {
 
     return (
         <MaterialList>
-            {allChats.map((chat) => {
-                if (chat.type === "public") {
+            {allChats.map((chatItem) => {
+                if (chatItem.type === "group") {
                     return (
                         <MaterialListItem
-                            key={`public-${chat.id}`}
-                            headline={chat.name}
-                            onClick={() => handlePublicChatClick(chat.name)}
+                            key={`group-${chatItem.id}`}
+                            headline={chatItem.name}
+                            onClick={() => handleGroupClick(chatItem.id)}
                             style={{ cursor: "pointer" }}
                         >
-                            {formatPublicChatMessage(chat.id) && (
+                            {formatGroupMessage(chatItem.id) && (
                                 <span slot="description" className={styles.listDescription}>
-                                    {formatPublicChatMessage(chat.id)}
+                                    {formatGroupMessage(chatItem.id)}
                                 </span>
                             )}
                             <img
-                                src={defaultAvatar}
-                                alt={chat.name}
+                                src={chatItem.profile_picture || defaultAvatar}
+                                alt={chatItem.name}
                                 slot="icon"
                                 style={{
                                     width: "40px",
@@ -254,32 +304,64 @@ export function UnifiedChatsList() {
                                     borderRadius: "50%",
                                     objectFit: "cover"
                                 }}
+                                onError={(e) => {
+                                    e.target.src = defaultAvatar;
+                                }}
+                            />
+                        </MaterialListItem>
+                    );
+                } else if (chatItem.type === "channel") {
+                    return (
+                        <MaterialListItem
+                            key={`channel-${chatItem.id}`}
+                            headline={chatItem.name}
+                            onClick={() => handleChannelClick(chatItem.id)}
+                            style={{ cursor: "pointer" }}
+                        >
+                            {formatChannelMessage(chatItem.id) && (
+                                <span slot="description" className={styles.listDescription}>
+                                    {formatChannelMessage(chatItem.id)}
+                                </span>
+                            )}
+                            <img
+                                src={chatItem.profile_picture || defaultAvatar}
+                                alt={chatItem.name}
+                                slot="icon"
+                                style={{
+                                    width: "40px",
+                                    height: "40px",
+                                    borderRadius: "50%",
+                                    objectFit: "cover"
+                                }}
+                                onError={(e) => {
+                                    e.target.src = defaultAvatar;
+                                }}
                             />
                         </MaterialListItem>
                     );
                 } else {
                     return (
                         <MaterialListItem
-                            key={`dm-${chat.id}`}
-                            headline={chat.display_name}
-                            onClick={() => handleDMClick(chat)}
+                            key={`dm-${chatItem.id}`}
+                            headline={chatItem.display_name}
+                            onClick={() => handleDMClick(chatItem)}
                             style={{ cursor: "pointer" }}
                         >
                             <div slot="headline" className="dm-list-headline">
-                                {chat.display_name}
+                                {chatItem.display_name}
                                 <StatusBadge 
-                                    verified={chat.verified || false}
-                                    userId={chat.userId}
+                                    verified={chatItem.verified || false}
+                                    userId={chatItem.userId}
                                     size="small"
                                 />
                             </div>
                             <span slot="description" className={styles.listDescription}>
-                                {chat.lastMessage || "Нет сообщений"}
+                                {chatItem.lastMessage || "Нет сообщений"}
                             </span>
                             <div slot="icon" style={{ position: "relative", width: "40px", height: "40px", display: "inline-block" }}>
                                 <img
-                                    src={chat.profile_picture || defaultAvatar}
-                                    alt={chat.display_name}
+                                    src={chatItem.profile_picture || defaultAvatar}
+                                    alt={chatItem.display_name}
                                     style={{
                                         width: "40px",
                                         height: "40px",
@@ -291,11 +373,11 @@ export function UnifiedChatsList() {
                                         e.target.src = defaultAvatar;
                                     }}
                                 />
-                                <OnlineIndicator userId={chat.id} />
+                                <OnlineIndicator userId={chatItem.id} />
                             </div>
-                            {chat.unreadCount > 0 && (
+                            {chatItem.unreadCount > 0 && (
                                 <MaterialBadge slot="end-icon">
-                                    {chat.unreadCount}
+                                    {chatItem.unreadCount}
                                 </MaterialBadge>
                             )}
                         </MaterialListItem>

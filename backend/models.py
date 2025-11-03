@@ -1,8 +1,10 @@
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, ForeignKey, inspect, null, text, UniqueConstraint
+from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, ForeignKey, inspect, null, text, UniqueConstraint, Index
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from pydantic import BaseModel
+import secrets
+import string
 
 Base = declarative_base()
 
@@ -176,6 +178,236 @@ class DeviceSession(Base):
 
     # Relationship back to user (optional lazy to avoid heavy loads)
     user = relationship("User", lazy="select")
+
+
+# Groups and Channels Models
+class Group(Base):
+    __tablename__ = "group"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(100), nullable=False)
+    username = Column(String(50), unique=True, nullable=True, index=True)  # Nullable for private groups
+    owner_id = Column(Integer, ForeignKey("user.id"), nullable=False)
+    access_type = Column(String(20), nullable=False, default="public")  # "public" or "private"
+    invite_link = Column(String(32), unique=True, nullable=True, index=True)  # Random string for private groups
+    description = Column(Text, nullable=True)
+    profile_picture = Column(String(255), nullable=True)
+    created_at = Column(DateTime, default=datetime.now)
+
+    owner = relationship("User", foreign_keys=[owner_id])
+    members = relationship("GroupMember", back_populates="group", cascade="all, delete-orphan", lazy="select")
+    messages = relationship("GroupMessage", back_populates="group", cascade="all, delete-orphan", lazy="select")
+    admins = relationship("GroupAdmin", back_populates="group", cascade="all, delete-orphan", lazy="select")
+    restrictions = relationship("GroupMemberRestriction", back_populates="group", cascade="all, delete-orphan", lazy="select")
+
+
+class Channel(Base):
+    __tablename__ = "channel"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(100), nullable=False)
+    username = Column(String(50), unique=True, nullable=True, index=True)  # Nullable for private channels
+    owner_id = Column(Integer, ForeignKey("user.id"), nullable=False)
+    access_type = Column(String(20), nullable=False, default="public")  # "public" or "private"
+    invite_link = Column(String(32), unique=True, nullable=True, index=True)  # Random string for private channels
+    description = Column(Text, nullable=True)
+    profile_picture = Column(String(255), nullable=True)
+    subscriber_count = Column(Integer, default=0)
+    created_at = Column(DateTime, default=datetime.now)
+
+    owner = relationship("User", foreign_keys=[owner_id])
+    subscribers = relationship("ChannelSubscriber", back_populates="channel", cascade="all, delete-orphan", lazy="select")
+    messages = relationship("ChannelMessage", back_populates="channel", cascade="all, delete-orphan", lazy="select")
+    admins = relationship("ChannelAdmin", back_populates="channel", cascade="all, delete-orphan", lazy="select")
+
+
+class GroupMember(Base):
+    __tablename__ = "group_member"
+
+    id = Column(Integer, primary_key=True, index=True)
+    group_id = Column(Integer, ForeignKey("group.id"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("user.id"), nullable=False, index=True)
+    role = Column(String(20), nullable=False, default="member")  # "owner", "admin", "member"
+    joined_at = Column(DateTime, default=datetime.now)
+    is_banned = Column(Boolean, default=False)
+    banned_until = Column(DateTime, nullable=True)
+
+    group = relationship("Group", back_populates="members")
+    user = relationship("User")
+
+    __table_args__ = (UniqueConstraint('group_id', 'user_id', name='unique_group_member'),)
+
+
+class ChannelSubscriber(Base):
+    __tablename__ = "channel_subscriber"
+
+    id = Column(Integer, primary_key=True, index=True)
+    channel_id = Column(Integer, ForeignKey("channel.id"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("user.id"), nullable=False, index=True)
+    subscribed_at = Column(DateTime, default=datetime.now)
+
+    channel = relationship("Channel", back_populates="subscribers")
+    user = relationship("User")
+
+    __table_args__ = (UniqueConstraint('channel_id', 'user_id', name='unique_channel_subscriber'),)
+
+
+class GroupMessage(Base):
+    __tablename__ = "group_message"
+
+    id = Column(Integer, primary_key=True, index=True)
+    group_id = Column(Integer, ForeignKey("group.id"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("user.id"), nullable=False)
+    content = Column(Text, nullable=False)
+    timestamp = Column(DateTime, default=datetime.now)
+    reply_to_id = Column(Integer, ForeignKey("group_message.id"), nullable=True)
+    is_edited = Column(Boolean, default=False)
+
+    group = relationship("Group", back_populates="messages")
+    author = relationship("User")
+    reply_to = relationship("GroupMessage", remote_side=[id])
+    files = relationship("GroupMessageFile", back_populates="message", cascade="all, delete-orphan", lazy="select")
+    reactions = relationship("GroupReaction", cascade="all, delete-orphan", lazy="select")
+
+
+class ChannelMessage(Base):
+    __tablename__ = "channel_message"
+
+    id = Column(Integer, primary_key=True, index=True)
+    channel_id = Column(Integer, ForeignKey("channel.id"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("user.id"), nullable=False)
+    content = Column(Text, nullable=False)
+    timestamp = Column(DateTime, default=datetime.now)
+    reply_to_id = Column(Integer, ForeignKey("channel_message.id"), nullable=True)
+    is_edited = Column(Boolean, default=False)
+
+    channel = relationship("Channel", back_populates="messages")
+    author = relationship("User")
+    reply_to = relationship("ChannelMessage", remote_side=[id])
+    files = relationship("ChannelMessageFile", back_populates="message", cascade="all, delete-orphan", lazy="select")
+    reactions = relationship("ChannelReaction", cascade="all, delete-orphan", lazy="select")
+
+
+class GroupMessageFile(Base):
+    __tablename__ = "group_message_file"
+
+    id = Column(Integer, primary_key=True, index=True)
+    message_id = Column(Integer, ForeignKey("group_message.id"), nullable=False, index=True)
+    path = Column(Text, nullable=False)
+    name = Column(Text, nullable=False)
+
+    message = relationship("GroupMessage", back_populates="files")
+
+
+class ChannelMessageFile(Base):
+    __tablename__ = "channel_message_file"
+
+    id = Column(Integer, primary_key=True, index=True)
+    message_id = Column(Integer, ForeignKey("channel_message.id"), nullable=False, index=True)
+    path = Column(Text, nullable=False)
+    name = Column(Text, nullable=False)
+
+    message = relationship("ChannelMessage", back_populates="files")
+
+
+class GroupAdmin(Base):
+    __tablename__ = "group_admin"
+
+    id = Column(Integer, primary_key=True, index=True)
+    group_id = Column(Integer, ForeignKey("group.id"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("user.id"), nullable=False, index=True)
+    admin_name = Column(String(50), nullable=True)  # Custom label like "owner", "moderator"
+    can_send_messages = Column(Boolean, default=True)
+    can_send_images = Column(Boolean, default=True)
+    can_send_files = Column(Boolean, default=True)
+    can_delete_messages = Column(Boolean, default=True)
+    can_assign_admins = Column(Boolean, default=True)
+    can_modify_profile = Column(Boolean, default=True)
+    assigned_at = Column(DateTime, default=datetime.now)
+
+    group = relationship("Group", back_populates="admins")
+    user = relationship("User")
+
+    __table_args__ = (UniqueConstraint('group_id', 'user_id', name='unique_group_admin'),)
+
+
+class ChannelAdmin(Base):
+    __tablename__ = "channel_admin"
+
+    id = Column(Integer, primary_key=True, index=True)
+    channel_id = Column(Integer, ForeignKey("channel.id"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("user.id"), nullable=False, index=True)
+    admin_name = Column(String(50), nullable=True)  # Custom label like "owner", "moderator"
+    can_send_messages = Column(Boolean, default=True)
+    can_send_images = Column(Boolean, default=True)
+    can_send_files = Column(Boolean, default=True)
+    can_delete_messages = Column(Boolean, default=True)
+    can_assign_admins = Column(Boolean, default=True)
+    can_modify_profile = Column(Boolean, default=True)
+    assigned_at = Column(DateTime, default=datetime.now)
+
+    channel = relationship("Channel", back_populates="admins")
+    user = relationship("User")
+
+    __table_args__ = (UniqueConstraint('channel_id', 'user_id', name='unique_channel_admin'),)
+
+
+class GroupMemberRestriction(Base):
+    __tablename__ = "group_member_restriction"
+
+    id = Column(Integer, primary_key=True, index=True)
+    group_id = Column(Integer, ForeignKey("group.id"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("user.id"), nullable=False, index=True)
+    can_send_messages = Column(Boolean, default=False)
+    can_send_images = Column(Boolean, default=False)
+    can_send_files = Column(Boolean, default=False)
+    can_react = Column(Boolean, default=True)  # Can be disabled
+    expires_at = Column(DateTime, nullable=True)  # Null means permanent until manually changed
+    restricted_by = Column(Integer, ForeignKey("user.id"), nullable=False)  # Admin who applied restriction
+    created_at = Column(DateTime, default=datetime.now)
+
+    group = relationship("Group", back_populates="restrictions")
+    user = relationship("User", foreign_keys=[user_id])
+    restrictor = relationship("User", foreign_keys=[restricted_by])
+
+    __table_args__ = (UniqueConstraint('group_id', 'user_id', name='unique_group_member_restriction'),)
+
+
+class GroupReaction(Base):
+    __tablename__ = "group_reaction"
+
+    id = Column(Integer, primary_key=True, index=True)
+    message_id = Column(Integer, ForeignKey("group_message.id"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("user.id"), nullable=False)
+    emoji = Column(String(10), nullable=False)
+    timestamp = Column(DateTime, default=datetime.now)
+    
+    user = relationship("User")
+    message = relationship("GroupMessage", overlaps="reactions")
+    
+    __table_args__ = (UniqueConstraint('message_id', 'user_id', 'emoji', name='unique_group_reaction'),)
+
+
+class ChannelReaction(Base):
+    __tablename__ = "channel_reaction"
+
+    id = Column(Integer, primary_key=True, index=True)
+    message_id = Column(Integer, ForeignKey("channel_message.id"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("user.id"), nullable=False)
+    emoji = Column(String(10), nullable=False)
+    timestamp = Column(DateTime, default=datetime.now)
+    
+    user = relationship("User")
+    message = relationship("ChannelMessage", overlaps="reactions")
+    
+    __table_args__ = (UniqueConstraint('message_id', 'user_id', 'emoji', name='unique_channel_reaction'),)
+
+
+# Helper function to generate invite link
+def generate_invite_link(length: int = 16) -> str:
+    """Generate a random invite link string"""
+    alphabet = string.ascii_letters + string.digits
+    return ''.join(secrets.choice(alphabet) for _ in range(length))
 
 # Pydantic модели
 class LoginRequest(BaseModel):

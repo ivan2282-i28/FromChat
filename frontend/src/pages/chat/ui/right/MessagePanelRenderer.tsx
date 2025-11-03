@@ -13,7 +13,6 @@ import useCall from "@/pages/chat/hooks/useCall";
 import { TypingIndicator } from "./TypingIndicator";
 import { OnlineStatus } from "./OnlineStatus";
 import { typingManager } from "@/core/typingManager";
-import { PublicChatPanel } from "./panels/PublicChatPanel";
 import { MaterialIcon, MaterialIconButton } from "@/utils/material";
 import styles from "@/pages/chat/css/layout.module.scss";
 import rightPanelStyles from "@/pages/chat/css/right-panel.module.scss";
@@ -38,7 +37,8 @@ function ChatHeaderText({ panel }: { panel: MessagePanel | null }) {
         const isTyping = chat.dmTypingUsers.get(recipientId);
 
         content = isTyping ? <TypingIndicator typingUsers={[]} /> : <OnlineStatus userId={recipientId} />;
-    } else if (panel instanceof PublicChatPanel && otherTypingUsers.length > 0) {
+    } else if (!panel.isDm() && otherTypingUsers.length > 0) {
+        // For groups and channels, show typing indicator
         content = <TypingIndicator typingUsers={otherTypingUsers} />;
     } else {
         return null;
