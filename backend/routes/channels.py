@@ -470,15 +470,19 @@ async def send_channel_message(
         except Exception:
             raise HTTPException(status_code=400, detail="Invalid payload JSON")
     
+    # If request is still None, create a default one
+    if request is None:
+        request = SendChannelMessageRequest(content="", reply_to_id=None)
+    
     if request.reply_to_id:
         original_message = db.query(ChannelMessage).filter(ChannelMessage.id == request.reply_to_id).first()
         if not original_message:
             raise HTTPException(status_code=404, detail="Original message not found")
     
-    if not request.content.strip() and not files:
+    if not request.content or (not request.content.strip() and not files):
         raise HTTPException(status_code=400, detail="No content provided")
     
-    filtered_content = filter_profanity(request.content.strip()) if request.content else ""
+    filtered_content = filter_profanity(request.content.strip()) if (request.content and request.content.strip()) else ""
     
     if filtered_content and len(filtered_content) > 4096:
         raise HTTPException(status_code=400, detail="Message too long")
